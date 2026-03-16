@@ -482,26 +482,17 @@ function updateFlowStats(logs) {
 
 
 function renderCharts(logs, master, mode, filterValue) {
-    // 1. Bay Change Reasons (Doughnut) - Ultra-Robust Extraction
+    // 1. Bay Change Reasons (Doughnut)
     const reasons = {};
     logs.forEach(r => {
-        // According to SHEET_1 (Logs), Bay Reason 1 is typically index 10 (0-indexed).
-        // However, we check multiples for safety.
         let reason = r['Bay Reason 1'] || r['Reason'] || (r._raw && (r._raw[10] || r._raw[11] || r._raw[9]));
-        
         if (reason && typeof reason === 'string') {
             const clean = reason.trim();
             if (clean && clean !== '-' && clean !== 'Reason' && clean !== 'Bay Reason 1' && clean !== 'Gate Reason 1') {
                 const label = clean.split(',')[0].trim();
-                
-                // Strict Reason Filter:
-                // 1. Skip if it's purely numeric (e.g. "81", "84")
-                // 2. Skip if it starts with "G" or "8" and contains numbers
-                // 3. Skip if it matches a Bay category (C or R)
                 const isBay = classifyBay(label) !== 'N/A';
                 const isNumeric = !isNaN(label) || /^\d+$/.test(label);
                 const isGatePattern = /^(G|GATE|8|9)\s?[\d]+/i.test(label) || /^[0-9A-Z]{1,3}$/.test(label);
-                
                 if (label && !isNumeric && !isBay && !isGatePattern && label.length > 2) {
                     reasons[label] = (reasons[label] || 0) + 1;
                 }
@@ -509,11 +500,9 @@ function renderCharts(logs, master, mode, filterValue) {
         }
     });
 
-    const sortedReasons = Object.entries(reasons).sort((a,b) => b[1] - a[1]);
-    const topN = sortedReasons.slice(0, 10); // Show top 10 in 2 columns
-    
     const rankList = document.getElementById('top-reasons-list');
     if (rankList) {
+        const topN = Object.entries(reasons).sort((a,b) => b[1] - a[1]).slice(0, 10);
         rankList.innerHTML = topN.map(([label, count], i) => `
             <div class="rank-item" style="margin-bottom: 2px; padding: 6px 10px;">
                 <div class="rank-number" style="min-width: 15px; font-size: 0.7rem;">${i+1}</div>
@@ -528,29 +517,17 @@ function renderCharts(logs, master, mode, filterValue) {
     initChart('reasonsChart', 'doughnut', {
         labels: Object.keys(reasons),
         datasets: [{ data: Object.values(reasons), backgroundColor: ['#00f2ff', '#7000ff', '#00ff9d', '#f59e0b', '#ef4444'], borderWidth: 0 }]
-    }, { 
-        plugins: { legend: { display: false } }, 
-        cutout: '70%',
-        maintainAspectRatio: true,
-        aspectRatio: 2.5 // Even flatter/smaller
-    });
+    }, { plugins: { legend: { display: false } }, cutout: '70%', maintainAspectRatio: true, aspectRatio: 2.5 });
 
-    // 2. Contact Bay Utilization (4-15, skip 13)
+    // 2. Contact Bay Utilization
     const usage = {};
-    for (let i = 4; i <= 15; i++) {
-        if (i === 13) continue;
-        usage[i] = 0;
-    }
+    for (let i = 4; i <= 15; i++) { if (i !== 13) usage[i] = 0; }
     logs.forEach(r => {
         const b = parseInt(r['Final Bay'] || (r._raw && r._raw[8]));
-        if (b >= 4 && b <= 15 && b !== 13) {
-            usage[b]++;
-        }
+        if (usage[b] !== undefined) usage[b]++;
     });
 
-    // Sub-divided Peaks: Domestic (4-10) and Inter (11-15)
-    let domMax = -1, domBay = -1;
-    let intMax = -1, intBay = -1;
+    let domMax = -1, domBay = -1, intMax = -1, intBay = -1;
     Object.entries(usage).forEach(([b, count]) => {
         const bayNum = parseInt(b);
         if (bayNum <= 10) { if (count >= domMax) { domMax = count; domBay = bayNum; } }
@@ -559,9 +536,9 @@ function renderCharts(logs, master, mode, filterValue) {
 
     const utilColors = Object.keys(usage).map(b => {
         const bayNum = parseInt(b);
-        if (bayNum === domBay && domMax > 0) return '#00ff9d'; // Domestic Peak
-        if (bayNum === intBay && intMax > 0) return '#7000ff'; // Inter Peak
-        return '#00f2ff'; // Default
+        if (bayNum === domBay && domMax > 0) return '#00ff9d';
+        if (bayNum === intBay && intMax > 0) return '#7000ff';
+        return '#00f2ff';
     });
 
     initChart('utilizationChart', 'bar', {
@@ -569,165 +546,78 @@ function renderCharts(logs, master, mode, filterValue) {
         datasets: [{ label: 'Usage Count', data: Object.values(usage), backgroundColor: utilColors, borderRadius: 4 }]
     });
 
-    // 3. Peak Hour Operations (Master Data Occupancy)
-    const hourlyData = Array.from({ length: 24 }, (_, i) => ({ 
-        hour: i, contact: 0, remote: 0, changes: 0 
-    }));
+    // 3. Peak Hour Operations
+    const hourlyData = Array.from({ length: 24 }, (_, i) => ({ hour: i, contact: 0, remote: 0, changes: 0 }));
     
+    // Occupancy
     master.forEach(r => {
         const obsDateStr = r.Date || (r._raw && r._raw[0]);
-        const callsign = (r.Callsign || r._raw[1] || '').trim();
-        if (!callsign || callsign === '-' || callsign.toLowerCase() === 'callsign') return;
-
         const sibt = r['SIBT'] || (r._raw && r._raw[2]);
-        const bayStr = getFinalBay(r);
-        const type = classifyBay(bayStr);
+        const type = classifyBay(getFinalBay(r));
         if (type === 'N/A') return;
-
         const arr = parseMasterDateTime(sibt, obsDateStr);
-        if (arr) {
-            const h = arr.getHours();
-            if (type === 'C') hourlyData[h].contact++;
-            else hourlyData[h].remote++;
-            
-    // Corrected Bay Change Hourly Logic: Use logsData for actual timing of changes
+        if (arr) hourlyData[arr.getHours()][type === 'C' ? 'contact' : 'remote']++;
+    });
+
+    // Bay Changes
     logs.forEach(l => {
         const dObj = getRecordDate(l.Date || (l._raw && l._raw[0]));
         if (!dObj) return;
-        
         const sibt = l['SIBT'] || (l._raw && l._raw[4]);
         const time = parseMasterDateTime(sibt, dObj.iso);
         if (time && l['Original Bay'] !== l['Final Bay']) {
-            const h = time.getHours();
-            hourlyData[h].changes++;
+            hourlyData[time.getHours()].changes++;
         }
     });
 
-    // Peak Highlighter: Rank hours by total volume
     const sortedHours = [...hourlyData].sort((a, b) => (b.contact + b.remote) - (a.contact + a.remote));
     const top3 = sortedHours.slice(0, 3).filter(d => (d.contact + d.remote) > 0).map(d => d.hour);
+    const peakColors = ['#00f2ff', '#ff00f2', '#aeff00'];
     
-    // 2026 Elite Neon Palette
-    const peakColors = ['#00f2ff', '#ff00f2', '#aeff00']; // Rank 1, 2, 3
-    
-    const contactColors = hourlyData.map(d => {
-        const rankIdx = top3.indexOf(d.hour);
-        if (rankIdx !== -1) return peakColors[rankIdx];
-        return 'rgba(255, 255, 255, 0.15)'; 
-    });
-    const remoteColors = hourlyData.map(d => {
-        const rankIdx = top3.indexOf(d.hour);
-        if (rankIdx !== -1) return peakColors[rankIdx] + '99'; // Semi-transparent version
-        return 'rgba(255, 255, 255, 0.08)';
-    });
-
     initChart('peakHourChart', 'bar', {
         labels: hourlyData.map(d => `${String(d.hour).padStart(2, '0')}:00`),
         datasets: [
-            { 
-                label: 'Contact (A/C)', 
-                data: hourlyData.map(d => d.contact), 
-                backgroundColor: contactColors, 
-                stack: 'ac'
-            },
-            { 
-                label: 'Remote (A/C)', 
-                data: hourlyData.map(d => d.remote), 
-                backgroundColor: remoteColors,
-                stack: 'ac'
-            }
+            { label: 'Contact (A/C)', data: hourlyData.map(d => d.contact), stack: 'ac',
+              backgroundColor: hourlyData.map(d => top3.indexOf(d.hour) !== -1 ? peakColors[top3.indexOf(d.hour)] : 'rgba(255, 255, 255, 0.15)') },
+            { label: 'Remote (A/C)', data: hourlyData.map(d => d.remote), stack: 'ac',
+              backgroundColor: hourlyData.map(d => top3.indexOf(d.hour) !== -1 ? peakColors[top3.indexOf(d.hour)] + '99' : 'rgba(255, 255, 255, 0.08)') }
         ]
     }, {
-        plugins: {
-            tooltip: {
-                callbacks: {
-                    afterBody: (context) => {
-                        const d = hourlyData[context[0].dataIndex];
-                        return `Bay Changes: ${d.changes}`;
-                    },
-                    footer: (context) => {
-                        const total = hourlyData.reduce((sum, d) => sum + d.contact + d.remote, 0);
-                        return `Daily Total Aircraft: ${total}`;
-                    }
-                }
-            }
-        },
-        scales: {
-            x: { stacked: true, grid: { display: false } },
-            y: { 
-                stacked: true,
-                beginAtZero: true, 
-                border: { display: false }, 
-                ticks: { stepSize: 5 } 
-            }
-        }
+        plugins: { tooltip: { callbacks: { afterBody: (ctx) => `Bay Changes: ${hourlyData[ctx[0].dataIndex].changes}` } } },
+        scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, beginAtZero: true, ticks: { stepSize: 5 } } }
     });
 
-    console.log(`[v2.8] Peak Logic Reverted: Total A/C in chart = ${hourlyData.reduce((s,d)=>s+d.contact+d.remote, 0)}`);
-    
-    // 4. Monthly Trend Analysis (Only in Monthly mode)
+    // 4. Monthly Trend Analysis
     if (mode === 'monthly') {
-        const [filterMonth, filterYear] = filterValue.split('-').map(Number);
-        const trendData = {}; // key: day (DD)
-        
-        console.log(`--- Monthly Aggregation Start [${filterValue}] ---`);
-        let day9Audit = { rows: 0, movements: 0, changes: 0 };
-        
-        master.forEach((r) => {
+        const [fMonth, fYear] = filterValue.split('-').map(Number);
+        const trend = {};
+        master.forEach(r => {
             const dObj = getRecordDate(r.Date || (r._raw && r._raw[0]));
-            if (!dObj || dObj.month !== filterMonth || dObj.year !== filterYear) return;
-            
-            const dd = dObj.day;
-            if (!trendData[dd]) trendData[dd] = { flights: 0, changes: 0 };
-            
-            const isF = (v) => v && v.trim().length > 1 && v !== '-' && !v.toLowerCase().includes('flight') && !v.toLowerCase().includes('callsign');
-            
+            if (!dObj || dObj.month !== fMonth || dObj.year !== fYear) return;
+            if (!trend[dObj.day]) trend[dObj.day] = { flights: 0, changes: 0 };
             const raw = r._raw || [];
-            if (isF(raw[3])) trendData[dd].flights++;
-            if (isF(raw[5])) trendData[dd].flights++;
-            
-            [9, 11, 13, 15, 17].forEach(idx => {
-                if (isF(raw[idx])) trendData[dd].changes++;
-            });
+            if (isFlight(raw[3])) trend[dObj.day].flights++;
+            if (isFlight(raw[5])) trend[dObj.day].flights++;
+            [9, 11, 13, 15, 17].forEach(idx => { if (isFlight(raw[idx])) trend[dObj.day].changes++; });
         });
 
-        console.log('Day 9 Final Audit:', day9Audit);
-
-        // Peak Highlights for Monthly
+        const labels = Object.keys(trend).sort((a,b)=>Number(a)-Number(b));
+        const flightTrend = labels.map(d => trend[d].flights);
+        const changeTrend = labels.map(d => trend[d].changes);
+        
         const sortedF = [...flightTrend].sort((a,b) => b-a).slice(0, 3);
         const sortedC = [...changeTrend].sort((a,b) => b-a).slice(0, 1);
         
-        const fPeakColors = flightTrend.map(v => {
-            if (v === sortedF[0]) return '#00f2ff';
-            if (v === sortedF[1]) return '#ff00f2';
-            if (v === sortedF[2]) return '#aeff00';
-            return 'rgba(255, 255, 255, 0.1)';
-        });
-        const cPeakColors = changeTrend.map(v => (v === sortedC[0] && v > 0) ? '#ff00f2' : 'rgba(255, 255, 255, 0.1)');
-
         initChart('monthlyFlightsChart', 'bar', {
             labels,
-            datasets: [{ label: 'Total Flight Volume', data: flightTrend, backgroundColor: fPeakColors, borderRadius: 4 }]
-        }, {
-            scales: {
-                y: { 
-                    beginAtZero: false,
-                    suggestedMin: Math.floor(Math.min(...flightTrend) * 0.98),
-                    border: { display: false },
-                    ticks: { callback: function(value) { return Math.round(value); } }
-                },
-                x: { grid: { display: false } }
-            }
-        });
+            datasets: [{ label: 'Flights', data: flightTrend, borderRadius: 4,
+                        backgroundColor: flightTrend.map(v => v === sortedF[0] ? '#00f2ff' : v === sortedF[1] ? '#ff00f2' : v === sortedF[2] ? '#aeff00' : 'rgba(255,255,255,0.1)') }]
+        }, { scales: { y: { beginAtZero: false, suggestedMin: Math.floor(Math.min(...flightTrend)*0.98) } } });
         
         initChart('monthlyChangesChart', 'bar', {
             labels,
-            datasets: [{ label: 'Total Bay Changes', data: changeTrend, backgroundColor: cPeakColors, borderRadius: 4 }]
-        }, {
-            scales: {
-                y: { beginAtZero: true, border: { display: false } },
-                x: { grid: { display: false } }
-            }
+            datasets: [{ label: 'Changes', data: changeTrend, borderRadius: 4,
+                        backgroundColor: changeTrend.map(v => (v === sortedC[0] && v > 0) ? '#ff00f2' : 'rgba(255,255,255,0.1)') }]
         });
     }
 }
