@@ -233,11 +233,55 @@ function setupDatePicker() {
     dailyPicker.addEventListener('change', triggerRender);
     monthlyPicker.addEventListener('change', triggerRender);
 
-    // 6. Comparative Mode Toggle (Placeholder for future logic)
+    // 6. Comparative Mode Toggle
     const compareBtn = document.getElementById('toggle-compare');
-    if (compareBtn) {
-        compareBtn.addEventListener('click', () => {
-            alert('Comparative Mode: Select secondary date to compare with current view.');
+    const modal = document.getElementById('modal-overlay');
+    const closeModal = document.getElementById('close-modal');
+    const compareScope = document.getElementById('compare-scope');
+    const dateInputs = document.getElementById('compare-date-inputs');
+    const monthInputs = document.getElementById('compare-month-inputs');
+
+    if (compareBtn && modal) {
+        compareBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            modal.classList.add('active');
+            
+            // Populate month selectors if empty
+            const m1 = document.getElementById('compare-m1');
+            const m2 = document.getElementById('compare-m2');
+            if (m1 && m1.innerHTML === '') {
+                const opts = document.getElementById('monthly-picker').innerHTML;
+                m1.innerHTML = opts;
+                m2.innerHTML = opts;
+            }
+        });
+    }
+
+    if (closeModal) {
+        closeModal.addEventListener('click', () => modal.classList.remove('active'));
+    }
+
+    if (modal) {
+        modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); });
+    }
+
+    if (compareScope) {
+        compareScope.addEventListener('change', (e) => {
+            if (e.target.value === 'daily') {
+                dateInputs.style.display = 'block';
+                monthInputs.style.display = 'none';
+            } else {
+                dateInputs.style.display = 'none';
+                monthInputs.style.display = 'block';
+            }
+        });
+    }
+
+    const executeBtn = document.getElementById('execute-compare');
+    if (executeBtn) {
+        executeBtn.addEventListener('click', () => {
+            alert('Analytical Comparison Report Engine: This feature is being finalized with the 2026 data model. Coming in the next shift update!');
+            modal.classList.remove('active');
         });
     }
 
@@ -325,14 +369,18 @@ function renderDashboard(mode, filterValue, searchTerm = '') {
     renderCharts(fLogs, fMaster, mode, filterValue);
     updateTable(searchedLogs);
     
+    const dailyOnlyElements = document.querySelectorAll('.bento-grid > .card-glass:not(.span-12), .span-12:not(#monthly-trends-container)');
     const monthlyTrends = document.getElementById('monthly-trends-container');
     const logsSection = document.querySelector('.logs-section');
+
     if (mode === 'monthly') {
         if (monthlyTrends) monthlyTrends.style.display = 'contents';
         if (logsSection) logsSection.style.display = 'none';
+        dailyOnlyElements.forEach(el => { if (!el.contains(monthlyTrends)) el.style.display = 'none'; });
     } else {
         if (monthlyTrends) monthlyTrends.style.display = 'none';
         if (logsSection) logsSection.style.display = 'block';
+        dailyOnlyElements.forEach(el => el.style.display = 'block');
     }
 }
 
@@ -490,19 +538,35 @@ function renderCharts(logs, master, mode, filterValue) {
     // 2. Contact Bay Utilization (4-15, skip 13)
     const usage = {};
     for (let i = 4; i <= 15; i++) {
-        if (i === 13) continue; // Skip Bay 13 as requested
+        if (i === 13) continue;
         usage[i] = 0;
     }
     logs.forEach(r => {
         const b = parseInt(r['Final Bay'] || (r._raw && r._raw[8]));
         if (b >= 4 && b <= 15 && b !== 13) {
-            // Ensure we don't count 81/84 if data somehow matches
             usage[b]++;
         }
     });
+
+    // Sub-divided Peaks: Domestic (4-10) and Inter (11-15)
+    let domMax = -1, domBay = -1;
+    let intMax = -1, intBay = -1;
+    Object.entries(usage).forEach(([b, count]) => {
+        const bayNum = parseInt(b);
+        if (bayNum <= 10) { if (count >= domMax) { domMax = count; domBay = bayNum; } }
+        else { if (count >= intMax) { intMax = count; intBay = bayNum; } }
+    });
+
+    const utilColors = Object.keys(usage).map(b => {
+        const bayNum = parseInt(b);
+        if (bayNum === domBay && domMax > 0) return '#00ff9d'; // Domestic Peak
+        if (bayNum === intBay && intMax > 0) return '#7000ff'; // Inter Peak
+        return '#00f2ff'; // Default
+    });
+
     initChart('utilizationChart', 'bar', {
         labels: Object.keys(usage).map(b => `Bay ${b}`),
-        datasets: [{ label: 'Usage Count', data: Object.values(usage), backgroundColor: '#00f2ff', borderRadius: 4 }]
+        datasets: [{ label: 'Usage Count', data: Object.values(usage), backgroundColor: utilColors, borderRadius: 4 }]
     });
 
     // 3. Peak Hour Operations (Master Data Occupancy)
@@ -520,42 +584,56 @@ function renderCharts(logs, master, mode, filterValue) {
         const type = classifyBay(bayStr);
         if (type === 'N/A') return;
 
-        // Occupancy Logic: Count 1 aircraft at its Arrival (SIBT) hour
         const arr = parseMasterDateTime(sibt, obsDateStr);
         if (arr) {
             const h = arr.getHours();
             if (type === 'C') hourlyData[h].contact++;
             else hourlyData[h].remote++;
+            
+    // Corrected Bay Change Hourly Logic: Use logsData for actual timing of changes
+    logs.forEach(l => {
+        const dObj = getRecordDate(l.Date || (l._raw && l._raw[0]));
+        if (!dObj) return;
+        
+        const sibt = l['SIBT'] || (l._raw && l._raw[4]);
+        const time = parseMasterDateTime(sibt, dObj.iso);
+        if (time && l['Original Bay'] !== l['Final Bay']) {
+            const h = time.getHours();
+            hourlyData[h].changes++;
         }
     });
 
     // Peak Highlighter: Rank hours by total volume
     const sortedHours = [...hourlyData].sort((a, b) => (b.contact + b.remote) - (a.contact + a.remote));
-    const top3 = sortedHours.slice(0, 3).map(d => d.hour);
+    const top3 = sortedHours.slice(0, 3).filter(d => (d.contact + d.remote) > 0).map(d => d.hour);
     
-    const backgroundColors = hourlyData.map(d => {
-        const total = d.contact + d.remote;
-        if (total === 0) return 'rgba(255, 255, 255, 0.05)';
-        if (d.hour === top3[0]) return '#00ff9d'; // Rank 1 (Emerald)
-        if (d.hour === top3[1]) return '#00f2ff'; // Rank 2 (Cyan)
-        if (d.hour === top3[2]) return '#7000ff'; // Rank 3 (Violet)
-        return 'rgba(255, 255, 255, 0.2)'; // Others (Muted)
+    // 2026 Elite Neon Palette
+    const peakColors = ['#00f2ff', '#ff00f2', '#aeff00']; // Rank 1, 2, 3
+    
+    const contactColors = hourlyData.map(d => {
+        const rankIdx = top3.indexOf(d.hour);
+        if (rankIdx !== -1) return peakColors[rankIdx];
+        return 'rgba(255, 255, 255, 0.15)'; 
+    });
+    const remoteColors = hourlyData.map(d => {
+        const rankIdx = top3.indexOf(d.hour);
+        if (rankIdx !== -1) return peakColors[rankIdx] + '99'; // Semi-transparent version
+        return 'rgba(255, 255, 255, 0.08)';
     });
 
     initChart('peakHourChart', 'bar', {
         labels: hourlyData.map(d => `${String(d.hour).padStart(2, '0')}:00`),
         datasets: [
             { 
-                label: 'Aircraft Occupancy (Contact)', 
+                label: 'Contact (A/C)', 
                 data: hourlyData.map(d => d.contact), 
-                backgroundColor: backgroundColors, 
+                backgroundColor: contactColors, 
                 stack: 'ac'
             },
             { 
-                label: 'Aircraft Occupancy (Remote)', 
+                label: 'Remote (A/C)', 
                 data: hourlyData.map(d => d.remote), 
-                backgroundColor: backgroundColors,
-                opacity: 0.6,
+                backgroundColor: remoteColors,
                 stack: 'ac'
             }
         ]
@@ -563,6 +641,10 @@ function renderCharts(logs, master, mode, filterValue) {
         plugins: {
             tooltip: {
                 callbacks: {
+                    afterBody: (context) => {
+                        const d = hourlyData[context[0].dataIndex];
+                        return `Bay Changes: ${d.changes}`;
+                    },
                     footer: (context) => {
                         const total = hourlyData.reduce((sum, d) => sum + d.contact + d.remote, 0);
                         return `Daily Total Aircraft: ${total}`;
@@ -611,32 +693,28 @@ function renderCharts(logs, master, mode, filterValue) {
 
         console.log('Day 9 Final Audit:', day9Audit);
 
-        // Prepare labels
-        const maxDays = new Date(filterYear, filterMonth, 0).getDate();
-        let labels = [];
-        let flightTrend = [];
-        let changeTrend = [];
+        // Peak Highlights for Monthly
+        const sortedF = [...flightTrend].sort((a,b) => b-a).slice(0, 3);
+        const sortedC = [...changeTrend].sort((a,b) => b-a).slice(0, 1);
         
-        for (let i = 1; i <= maxDays; i++) {
-            const d = trendData[i];
-            if (d && (d.flights > 0 || d.changes > 0)) {
-                labels.push(String(i));
-                flightTrend.push(d.flights);
-                changeTrend.push(d.changes);
-            }
-        }
+        const fPeakColors = flightTrend.map(v => {
+            if (v === sortedF[0]) return '#00f2ff';
+            if (v === sortedF[1]) return '#ff00f2';
+            if (v === sortedF[2]) return '#aeff00';
+            return 'rgba(255, 255, 255, 0.1)';
+        });
+        const cPeakColors = changeTrend.map(v => (v === sortedC[0] && v > 0) ? '#ff00f2' : 'rgba(255, 255, 255, 0.1)');
 
         initChart('monthlyFlightsChart', 'bar', {
             labels,
-            datasets: [{ label: 'Total Flight Volume', data: flightTrend, backgroundColor: 'rgba(0, 242, 255, 0.6)', borderRadius: 4 }]
+            datasets: [{ label: 'Total Flight Volume', data: flightTrend, backgroundColor: fPeakColors, borderRadius: 4 }]
         }, {
             scales: {
                 y: { 
-                    beginAtZero: true, 
+                    beginAtZero: false,
+                    suggestedMin: Math.floor(Math.min(...flightTrend) * 0.98),
                     border: { display: false },
-                    ticks: {
-                        callback: function(value) { return Math.round(value); }
-                    }
+                    ticks: { callback: function(value) { return Math.round(value); } }
                 },
                 x: { grid: { display: false } }
             }
@@ -644,7 +722,7 @@ function renderCharts(logs, master, mode, filterValue) {
         
         initChart('monthlyChangesChart', 'bar', {
             labels,
-            datasets: [{ label: 'Total Bay Changes', data: changeTrend, backgroundColor: 'rgba(245, 158, 11, 0.6)', borderRadius: 4 }]
+            datasets: [{ label: 'Total Bay Changes', data: changeTrend, backgroundColor: cPeakColors, borderRadius: 4 }]
         }, {
             scales: {
                 y: { beginAtZero: true, border: { display: false } },
@@ -671,8 +749,7 @@ function updateTable(data) {
         const [reason, initial] = (r['Bay Reason 1'] || '-').split(',').map(s => s.trim());
         
         // Color coding logic
-        const bayColor = type === 'C' ? 'rgba(0, 242, 255, 0.15)' : 'rgba(112, 0, 255, 0.15)';
-        const bayLabelColor = type === 'C' ? '#00f2ff' : '#a855f7';
+        const bayTypeClass = type === 'C' ? 'bay-contact' : 'bay-remote';
 
         tr.innerHTML = `
             <td style="font-weight:700">${combinedFlight}</td>
@@ -680,7 +757,7 @@ function updateTable(data) {
             <td>${r['SIBT']} → ${r['SOBT']}</td>
             <td>${r['Original Bay']}</td>
             <td>
-                <span style="background: ${bayColor}; color: ${bayLabelColor}; padding: 4px 10px; border-radius: 6px; font-weight: 800; border: 1px solid ${bayLabelColor}44;">
+                <span class="bay-pill ${bayTypeClass}">
                     ${finalBay}
                 </span>
             </td>
