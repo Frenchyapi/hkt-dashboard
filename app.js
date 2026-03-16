@@ -681,9 +681,18 @@ function renderCharts(logs, master, mode, filterValue) {
         return '#00f2ff';
     });
 
+    const utilCounts = Object.values(usage);
     initChart('utilizationChart', 'bar', {
         labels: Object.keys(usage).map(b => `Bay ${b}`),
-        datasets: [{ label: 'Usage Count', data: Object.values(usage), backgroundColor: utilColors, borderRadius: 4 }]
+        datasets: [{ label: 'Usage Count', data: utilCounts, backgroundColor: utilColors, borderRadius: 4 }]
+    }, {
+        scales: {
+            y: {
+                beginAtZero: false,
+                suggestedMin: Math.floor(Math.min(...utilCounts) * 0.9),
+                suggestedMax: Math.ceil(Math.max(...utilCounts) * 1.1)
+            }
+        }
     });
 
     // 3. Peak Hour Operations
