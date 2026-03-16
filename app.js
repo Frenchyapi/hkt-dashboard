@@ -626,7 +626,7 @@ function renderCharts(logs, master, mode, filterValue) {
         }, {
             scales: {
                 y: { 
-                    beginAtZero: false, 
+                    beginAtZero: true, 
                     border: { display: false },
                     ticks: {
                         callback: function(value) { return Math.round(value); }
