@@ -534,43 +534,44 @@ input:checked + .slider::before { transform: translateX(22px); }
     .header-title h1 { font-size: 1.5rem; letter-spacing: -0.5px; }
     .subtitle { font-size: 0.75rem; }
 
-    /* Bento Grid Mobile: 2 Columns for KPIs, 1 Column for Charts */
+    /* Bento Grid Mobile: Strict Vertical Stack */
     .bento-grid {
-        grid-template-columns: 1fr 1fr;
-        grid-auto-rows: auto;
-        gap: 12px;
+        display: block; /* Disable grid on mobile to ensure perfect stack */
+        width: 100%;
     }
 
     .card-glass {
-        grid-column: span 2 !important; /* Force all cards to full width by default */
+        width: 100%;
+        margin-bottom: 12px;
+        grid-column: auto !important;
         grid-row: auto !important;
-        margin-bottom: 4px;
     }
 
     .kpi-cell { 
-        grid-column: span 1 !important; /* ONLY KPIs stay 2-per-row */
+        width: 100%; /* Vertical stack even for KPIs */
     }
 
-    .span-12, .span-8, .span-4 { grid-column: span 2 !important; }
+    .span-12, .span-8, .span-4, #monthly-trends-container { 
+        width: 100%; 
+        display: block !important;
+    }
     
-    .kpi-value { font-size: 1.5rem; }
-    .kpi-label { font-size: 0.65rem; }
+    .kpi-value { font-size: 1.8rem; } /* Slightly larger for single column */
+    .kpi-label { font-size: 0.75rem; }
 
-    /* Table Responsiveness */
-    .logs-section { padding: 12px; }
-    /* Hide non-essential columns on mobile: Type(2), Schedule(3), Original(4) */
-    th:nth-child(2), td:nth-child(2),
-    th:nth-child(3), td:nth-child(3),
-    th:nth-child(4), td:nth-child(4),
-    th:nth-child(6), td:nth-child(6) 
+    /* Table Responsiveness: Essential Only */
+    .logs-section { padding: 8px; border-radius: 12px; }
+    th:nth-child(2), td:nth-child(2), /* Type */
+    th:nth-child(3), td:nth-child(3), /* Schedule */
+    th:nth-child(4), td:nth-child(4), /* Original */
+    th:nth-child(6), td:nth-child(6)  /* Reason */
     { display: none; }
 
-    table { width: 100%; min-width: 0; }
-    .table-glass-container { overflow-x: visible; }
-    
-    td, th { padding: 12px 8px; font-size: 0.8rem; }
+    table { width: 100%; }
+    th { padding: 10px 8px; color: var(--text-dim); }
+    td { padding: 12px 8px; font-size: 0.95rem; }
 
-    .chart-inner { height: 220px !important; }
+    .chart-inner { height: 260px !important; }
     
     .reasons-container { flex-direction: column; }
     .reasons-grid { grid-template-columns: 1fr; width: 100%; }

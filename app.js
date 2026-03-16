@@ -717,9 +717,13 @@ function updateTable(data) {
     data.slice(0, 10).forEach(r => {
         const tr = document.createElement('tr');
         const hasChange = r['Original Bay'] !== r['Final Bay'];
+        const flightIn = (r['Flight In'] || '').trim();
+        const flightOut = (r['Flight Out'] || '').trim();
+        const combinedFlight = (flightIn && flightOut) ? `${flightIn}/${flightOut.replace(/[A-Za-z]+/, '')}` : (flightIn || flightOut || '-');
+        
         const [reason, initial] = (r['Bay Reason 1'] || '-').split(',').map(s => s.trim());
         tr.innerHTML = `
-            <td style="font-weight:700">In: ${r['Flight In']}<br><span style="color:var(--text-muted); font-size: 0.75rem;">Out: ${r['Flight Out']}</span></td>
+            <td style="font-weight:700">${combinedFlight}</td>
             <td><span style="background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 6px;">${r['A/C Type']}</span></td>
             <td>${r['SIBT']} → ${r['SOBT']}</td>
             <td>${r['Original Bay']}</td>
