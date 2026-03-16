@@ -570,17 +570,30 @@ function renderCharts(logs, master, mode, filterValue) {
         }
     });
 
-    const sortedHours = [...hourlyData].sort((a, b) => (b.contact + b.remote) - (a.contact + a.remote));
-    const top3 = sortedHours.slice(0, 3).filter(d => (d.contact + d.remote) > 0).map(d => d.hour);
-    const peakColors = ['#00f2ff', '#ff00f2', '#aeff00'];
+    // Peak Style: Single Peak, Vibrant Colors for all
+    const maxHour = [...hourlyData].sort((a,b) => (b.contact + b.remote) - (a.contact + a.remote))[0].hour;
     
+    // Modern 2026 Color Pairs
+    const colors = {
+        standard: { C: '#00f2ff', R: '#7000ff' }, // Cyan / Purple
+        peak: { C: '#00ff9d', R: '#059669' }      // Emerald / Deep Green
+    };
+
     initChart('peakHourChart', 'bar', {
         labels: hourlyData.map(d => `${String(d.hour).padStart(2, '0')}:00`),
         datasets: [
-            { label: 'Contact (A/C)', data: hourlyData.map(d => d.contact), stack: 'ac',
-              backgroundColor: hourlyData.map(d => top3.indexOf(d.hour) !== -1 ? peakColors[top3.indexOf(d.hour)] : 'rgba(255, 255, 255, 0.15)') },
-            { label: 'Remote (A/C)', data: hourlyData.map(d => d.remote), stack: 'ac',
-              backgroundColor: hourlyData.map(d => top3.indexOf(d.hour) !== -1 ? peakColors[top3.indexOf(d.hour)] + '99' : 'rgba(255, 255, 255, 0.08)') }
+            { 
+                label: 'Contact (A/C)', 
+                data: hourlyData.map(d => d.contact), 
+                stack: 'ac',
+                backgroundColor: hourlyData.map(d => d.hour === maxHour && (d.contact+d.remote)>0 ? colors.peak.C : colors.standard.C) 
+            },
+            { 
+                label: 'Remote (A/C)', 
+                data: hourlyData.map(d => d.remote), 
+                stack: 'ac',
+                backgroundColor: hourlyData.map(d => d.hour === maxHour && (d.contact+d.remote)>0 ? colors.peak.R : colors.standard.R) 
+            }
         ]
     }, {
         plugins: { tooltip: { callbacks: { afterBody: (ctx) => `Bay Changes: ${hourlyData[ctx[0].dataIndex].changes}` } } },
@@ -601,6 +614,7 @@ function renderCharts(logs, master, mode, filterValue) {
             [9, 11, 13, 15, 17].forEach(idx => { if (isFlight(raw[idx])) trend[dObj.day].changes++; });
         });
 
+        // FIXED: Extract labels and data arrays from the trend object
         const labels = Object.keys(trend).sort((a,b)=>Number(a)-Number(b));
         const flightTrend = labels.map(d => trend[d].flights);
         const changeTrend = labels.map(d => trend[d].changes);
@@ -610,14 +624,22 @@ function renderCharts(logs, master, mode, filterValue) {
         
         initChart('monthlyFlightsChart', 'bar', {
             labels,
-            datasets: [{ label: 'Flights', data: flightTrend, borderRadius: 4,
-                        backgroundColor: flightTrend.map(v => v === sortedF[0] ? '#00f2ff' : v === sortedF[1] ? '#ff00f2' : v === sortedF[2] ? '#aeff00' : 'rgba(255,255,255,0.1)') }]
+            datasets: [{ 
+                label: 'Flights', 
+                data: flightTrend, 
+                borderRadius: 4,
+                backgroundColor: flightTrend.map(v => v === sortedF[0] ? '#00f2ff' : v === sortedF[1] ? '#ff70ff' : v === sortedF[2] ? '#aeff00' : 'rgba(255,255,255,0.15)') 
+            }]
         }, { scales: { y: { beginAtZero: false, suggestedMin: Math.floor(Math.min(...flightTrend)*0.98) } } });
         
         initChart('monthlyChangesChart', 'bar', {
             labels,
-            datasets: [{ label: 'Changes', data: changeTrend, borderRadius: 4,
-                        backgroundColor: changeTrend.map(v => (v === sortedC[0] && v > 0) ? '#ff00f2' : 'rgba(255,255,255,0.1)') }]
+            datasets: [{ 
+                label: 'Changes', 
+                data: changeTrend, 
+                borderRadius: 4,
+                backgroundColor: changeTrend.map(v => (v === sortedC[0] && v > 0) ? '#ff70ff' : 'rgba(255,255,255,0.15)') 
+            }]
         });
     }
 }
