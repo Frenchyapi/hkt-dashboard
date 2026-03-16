@@ -511,6 +511,8 @@ input:checked + .slider::before { transform: translateX(22px); }
     cursor: pointer;
 }
 
+.sidebar-close-btn { display: none; }
+
 @media (max-width: 850px) {
     .mobile-header { display: flex; }
     
@@ -546,6 +548,10 @@ input:checked + .slider::before { transform: translateX(22px); }
     }
 
     .sidebar-close-btn {
+        display: none;
+    }
+
+    .sidebar-close-btn {
         display: flex;
         align-items: center;
         justify-content: center;
@@ -559,7 +565,7 @@ input:checked + .slider::before { transform: translateX(22px); }
         height: 36px;
         border-radius: 10px;
         cursor: pointer;
-        z-index: 5000; /* Higher than sidebar padding */
+        z-index: 5000;
     }
 
     .nav-menu { display: none; }

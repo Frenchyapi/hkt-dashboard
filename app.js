@@ -182,16 +182,13 @@ function setupDatePicker() {
 
     const monthGroups = {};
     uniqueDates.forEach(d => {
-        const sep = d.includes('/') ? '/' : '-';
-        const parts = d.split(sep);
-        if (parts.length === 3) {
-            // M/D/Y Format: parts[0]=month, parts[1]=day, parts[2]=year
-            const mIdx = parseInt(parts[0]) - 1; 
-            if (mIdx < 0 || mIdx > 11) return;
-            const yearStr = parts[2].length === 2 ? parts[2] : parts[2].slice(-2);
+        const dObj = getRecordDate(d);
+        if (dObj) {
+            const mIdx = dObj.month - 1;
+            const yearStr = dObj.year.toString().slice(-2);
             const monthLabel = new Date(2000, mIdx).toLocaleString('en-GB', { month: 'short' }).toUpperCase();
             const label = `${monthLabel} ${yearStr}`;
-            const key = `${parts[0].padStart(2, '0')}-${parts[2].length === 2 ? '20'+parts[2] : parts[2]}`; // Key is MM-YYYY
+            const key = `${String(dObj.month).padStart(2, '0')}-${dObj.year}`;
             monthGroups[key] = label;
         }
     });
@@ -208,22 +205,20 @@ function setupDatePicker() {
     });
 
     // 3. Set Defaults
-    // Sort M/D/Y: 3/14/2026 -> 2026-03-14
+    // Sort dates
     const latestDate = uniqueDates.sort((a,b) => {
-        const pA = a.split(/[/-]/);
-        const pB = b.split(/[/-]/);
-        const isoA = `${pA[2]}-${pA[0].padStart(2,'0')}-${pA[1].padStart(2,'0')}`;
-        const isoB = `${pB[2]}-${pB[0].padStart(2,'0')}-${pB[1].padStart(2,'0')}`;
-        return isoB.localeCompare(isoA);
+        const dA = getRecordDate(a);
+        const dB = getRecordDate(b);
+        if (!dA || !dB) return 0;
+        return dB.iso.localeCompare(dA.iso);
     })[0];
 
     if (latestDate) {
-        const parts = latestDate.split(/[/-]/);
-        const y = parts[2].length === 2 ? `20${parts[2]}` : parts[2];
-        const m = parts[0].padStart(2, '0');
-        const d = parts[1].padStart(2, '0');
-        dailyPicker.value = `${y}-${m}-${d}`;
-        console.log('Default Daily Value Set:', dailyPicker.value);
+        const dObj = getRecordDate(latestDate);
+        if (dObj) {
+            dailyPicker.value = dObj.iso;
+            console.log('Default Daily Value Set:', dailyPicker.value);
+        }
     }
 
     // 4. Handle Mode Switch
@@ -374,12 +369,34 @@ function getRecordDate(rawDate) {
     const p = rawDate.split(/[/-]/).map(s => s.trim());
     if (p.length < 3) return null;
     
-    // Auto-detect format: Expecting M/D/Y based on sheet audit
-    let m = p[0].padStart(2, '0');
-    let d = p[1].padStart(2, '0');
-    let y = p[2].length === 2 ? `20${p[2]}` : p[2];
+    let m, d, y;
+    const p0 = parseInt(p[0]);
+    const p1 = parseInt(p[1]);
+    const p2 = p[2];
+
+    // Auto-detect format based on which part exceeds 12
+    if (p0 > 12) {
+        // First part > 12: Must be D/M/Y
+        d = p0; m = p1;
+    } else if (p1 > 12) {
+        // Second part > 12: Must be M/D/Y
+        m = p0; d = p1;
+    } else {
+        // Ambiguous (both <= 12): Default to M/D/Y as per original logic
+        m = p0; d = p1;
+    }
     
-    return { iso: `${y}-${m}-${d}`, monthKey: `${m}-${y}`, day: parseInt(d), month: parseInt(m), year: parseInt(y) };
+    const mStr = String(m).padStart(2, '0');
+    const dStr = String(d).padStart(2, '0');
+    const yStr = p2.length === 2 ? `20${p2}` : p2;
+    
+    return { 
+        iso: `${yStr}-${mStr}-${dStr}`, 
+        monthKey: `${mStr}-${yStr}`, 
+        day: d, 
+        month: m, 
+        year: parseInt(yStr) 
+    };
 }
 
 function renderDashboard(mode, filterValue, searchTerm = '') {
@@ -675,9 +692,26 @@ function renderCharts(logs, master, mode, filterValue) {
     // 2. Contact Bay Utilization
     const usage = {};
     for (let i = 4; i <= 15; i++) { if (i !== 13) usage[i] = 0; }
+    
+    // Count from Master (Arrivals/Base Bay)
+    master.forEach(r => {
+        const b = parseInt(r['Bay'] || (r._raw && r._raw[7]));
+        if (usage[b] !== undefined) {
+            usage[b]++;
+        }
+    });
+
+    // Count from Logs (Changes/Mid-stay transitions)
     logs.forEach(r => {
         const b = parseInt(r['Final Bay'] || (r._raw && r._raw[8]));
-        if (usage[b] !== undefined) usage[b]++;
+        if (usage[b] !== undefined) {
+            // Check if it's a real change (optional: prevent double counting if redundant)
+            const from = parseInt(r['Original Bay'] || (r._raw && r._raw[6]));
+            if (from !== b) {
+                usage[b]++;
+                console.log(`Log increment: Bay ${b} (from ${from})`);
+            }
+        }
     });
 
     let domMax = -1, domBay = -1, intMax = -1, intBay = -1;
