@@ -539,7 +539,8 @@ function updateMasterMetrics(data) {
         const raw = r._raw || [];
         if (isFlight(raw[3])) counts.flights++;
         if (isFlight(raw[5])) counts.flights++;
-        [9, 11, 13, 15, 17].forEach(idx => { if (isFlight(raw[idx])) counts.changes++; });
+        // Bay changes: use truthy check, NOT flight regex
+        [9, 11, 13, 15, 17].forEach(idx => { if ((raw[idx] || '').trim() !== '') counts.changes++; });
     });
     document.getElementById('master-total-ac').textContent = counts.aircraft;
     document.getElementById('master-total-flights').textContent = counts.flights;
@@ -750,32 +751,20 @@ function renderCharts(logs, master, mode, filterValue) {
             const raw = r._raw || [];
             if (isFlight(raw[3])) trend[dObj.day].flights++;
             if (isFlight(raw[5])) trend[dObj.day].flights++;
-            [9, 11, 13, 15, 17].forEach(idx => { if (isFlight(raw[idx])) trend[dObj.day].changes++; });
+            // Bay changes: truthy check
+            [9, 11, 13, 15, 17].forEach(idx => { if ((raw[idx] || '').trim() !== '') trend[dObj.day].changes++; });
         });
 
         const labels = Object.keys(trend).sort((a,b)=>Number(a)-Number(b));
         const flightData = labels.map(d => trend[d].flights);
         const changeData = labels.map(d => trend[d].changes);
         
-        // Single Peak Logic
+        // Single Peak Logic (Emerald for Flights, Pink for Changes)
         const maxF = Math.max(...flightData);
         const maxC = Math.max(...changeData);
         
-        const colors = {
-            flight: { standard: '#00f2ff', peak: '#00ff9d' },
-            change: { standard: '#f59e0b', peak: '#ff00f2' }
-        };
-
-        const fColors = flightData.map(v => (v === maxF && v > 0) ? colors.flight.peak : colors.flight.standard);
-        const cColors = changeData.map(v => (v === maxC && v > 0) ? colors.change.peak : colors.change.standard);
-        
-        // Sync JS Titles (if container exists)
-        if (monthlyTrends) {
-            const fTitle = monthlyTrends.querySelector('div:nth-child(1) .chart-title');
-            const cTitle = monthlyTrends.querySelector('div:nth-child(2) .chart-title');
-            if (fTitle) fTitle.textContent = 'Monthly Flights';
-            if (cTitle) cTitle.textContent = 'Monthly Total Bay Changes';
-        }
+        const fColors = flightData.map(v => (v === maxF && v > 0) ? '#00ff9d' : '#00f2ff');
+        const cColors = changeData.map(v => (v === maxC && v > 0) ? '#ff70ff' : '#f59e0b');
 
         initChart('monthlyFlightsChart', 'bar', {
             labels,
@@ -784,9 +773,9 @@ function renderCharts(logs, master, mode, filterValue) {
             scales: { 
                 y: { 
                     beginAtZero: false, 
-                    // Adjust scaling: If 318 is min and 350 is max, suggestedMin at 300 makes it look okay.
-                    // If it's too 'mangled', we add more breathing room.
-                    suggestedMin: Math.floor(Math.min(...flightData) * 0.9) 
+                    // Improved scaling for Day 9 stability (318 vs 350)
+                    suggestedMin: Math.min(...flightData) - 20,
+                    suggestedMax: Math.max(...flightData) + 10
                 } 
             } 
         });
