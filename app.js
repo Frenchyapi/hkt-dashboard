@@ -377,12 +377,7 @@ function parseMasterDateTime(timeStr, obsDateStr, defaultTimeStr = null) {
     
     let d = dayPart ? parseInt(dayPart) : dObs;
     let month = mObs - 1;
-    let year = yObs;
-    
-    if (dayPart) {
-        if (d > dObs + 15) { month--; if (month < 0) { month = 11; year--; } }
-        else if (d < dObs - 15) { month++; if (month > 11) { month = 0; year++; } }
-    }
+    let year = yObs < 100 ? yObs + 2000 : yObs;
     
     return new Date(year, month, d, h, m);
 }
@@ -510,52 +505,36 @@ function renderCharts(logs, master, mode, filterValue) {
         hour: i, contact: 0, remote: 0, changes: 0 
     }));
     
-    console.log(`Rendering Peaks for ${master.length} rows`);
     master.forEach(r => {
         const obsDateStr = r.Date || (r._raw && r._raw[0]);
-        if (!obsDateStr) return;
+        const dateObj = getRecordDate(obsDateStr);
+        if (!dateObj) return;
 
-        // Skip non-flight rows (Ghost data prevention)
         const callsign = (r.Callsign || r._raw[1] || '').trim();
         const fltIn = (r.FLIGHT || r._raw[3] || '').trim();
+        const fltOut = (r.FLIGHT_2 || r._raw[5] || '').trim();
         
-        // STICK HEADER CHECK: Ignore literal header text
-        if (!callsign || callsign === '-' || callsign.toLowerCase() === 'callsign' || !fltIn || fltIn.toLowerCase() === 'flight') return;
+        if (!callsign || callsign === '-' || callsign.toLowerCase() === 'callsign') return;
 
         const sibt = r['SIBT'] || (r._raw && r._raw[2]);
         const sobt = r['SOBT'] || (r._raw && r._raw[6]);
         const bayStr = getFinalBay(r);
         const type = classifyBay(bayStr);
         
-        // Count Changes (Columns J, L, N, P, R -> Indices 9, 11, 13, 15, 17)
-        if (r._raw) {
-            const changeIndices = [9, 11, 13, 15, 17];
-            let hasChange = false;
-            for (let idx of changeIndices) {
-                const val = (r._raw[idx] || '').trim();
-                if (val && val !== '-' && val !== '') { hasChange = true; break; }
-            }
-            if (hasChange) {
-                const sibtDate = parseMasterDateTime(sibt, obsDateStr);
-                if (sibtDate) hourlyData[sibtDate.getHours()].changes++;
-            }
+        // 1. Process Arrival (SIBT)
+        const arr = parseMasterDateTime(sibt, obsDateStr);
+        if (arr && arr.getDate() === dateObj.day) {
+            const h = arr.getHours();
+            if (type === 'C') hourlyData[h].contact++;
+            else hourlyData[h].remote++;
         }
 
-        // Peak Hour accounting: ONLY count based on Arrival Time (SIBT)
-        const arr = parseMasterDateTime(sibt, obsDateStr);
-        
-        if (arr && type !== 'N/A') {
-            const sep = obsDateStr.includes('/') ? '/' : '-';
-            const parts = obsDateStr.split(sep).map(Number);
-            // M/D/Y format: parts[0]=month, parts[1]=day, parts[2]=year
-            const dObs = parts[1];
-
-            // Strict Day Filter: Only count flights that Arrive on the Operational Day
-            if (arr.getDate() === dObs) {
-                const h = arr.getHours();
-                if (type === 'C') hourlyData[h].contact++;
-                else if (type === 'R') hourlyData[h].remote++;
-            }
+        // 2. Process Departure (SOBT)
+        const dep = parseMasterDateTime(sobt, obsDateStr);
+        if (dep && dep.getDate() === dateObj.day) {
+            const h = dep.getHours();
+            if (type === 'C') hourlyData[h].contact++;
+            else hourlyData[h].remote++;
         }
     });
 
@@ -563,16 +542,10 @@ function renderCharts(logs, master, mode, filterValue) {
         labels: hourlyData.map(d => `${String(d.hour).padStart(2, '0')}:00`),
         datasets: [
             { 
-                label: 'Contact Arrivals', 
-                data: hourlyData.map(d => d.contact), 
+                label: 'Total Movements (Arr+Dep)', 
+                data: hourlyData.map(d => d.contact + d.remote), 
                 backgroundColor: 'rgba(0, 242, 255, 0.7)', 
-                stack: 'status'
-            },
-            { 
-                label: 'Remote Arrivals', 
-                data: hourlyData.map(d => d.remote), 
-                backgroundColor: 'rgba(112, 0, 255, 0.7)', 
-                stack: 'status'
+                borderRadius: 4
             }
         ]
     }, {
