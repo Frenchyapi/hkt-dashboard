@@ -328,20 +328,22 @@ function renderDashboard(mode, filterValue, searchTerm = '') {
 function updateMasterMetrics(data) {
     const counts = { aircraft: data.length, flights: 0, changes: 0 };
     
+    // Pattern: 2+ alphanumeric followed by optional space and 1-4 digits (e.g., SQ728, SQ 728, 6E 1081)
+    const flightRegex = /^[A-Z0-9]{2,4}\s?\d{1,4}[A-Z]?$/i;
+    const isFlight = (v) => v && v.length > 1 && flightRegex.test(v.trim());
+    
     data.forEach(r => {
         const raw = r._raw || [];
-        const f1 = (raw[3] || '').trim();
-        const f2 = (raw[5] || '').trim();
         
-        const isF = (v) => v && v.length > 1 && v !== '-' && !v.toLowerCase().includes('flight') && !v.toLowerCase().includes('callsign');
-        
-        if (isF(f1)) counts.flights++;
-        if (isF(f2)) counts.flights++;
+        // Count Arrivals/Departures from standard columns (3 and 5)
+        if (isFlight(raw[3])) counts.flights++;
+        if (isFlight(raw[5])) counts.flights++;
 
-        // Changes check
+        // Count Bay Changes (9, 11, 13, 15, 17) - ensuring we don't count bay numbers as flights
         [9, 11, 13, 15, 17].forEach(idx => {
             const val = (raw[idx] || '').trim();
-            if (isF(val)) counts.changes++;
+            // Changes in this context are usually flight numbers or 'Assign' text
+            if (isFlight(val)) counts.changes++;
         });
     });
 
@@ -349,7 +351,7 @@ function updateMasterMetrics(data) {
     document.getElementById('master-total-flights').textContent = counts.flights;
     document.getElementById('master-total-change').textContent = counts.changes;
     
-    console.log(`[v2.2] KPI Audit for ${data.length} rows:`, counts);
+    console.log(`[v2.3] KPI Sync: Found ${data.length} AC, ${counts.flights} Flights, ${counts.changes} Changes`);
 }
 
 function parseMasterDateTime(timeStr, obsDateStr, defaultTimeStr = null) {
