@@ -248,16 +248,14 @@ function setupDatePicker() {
     });
 
     // 5. Regular Listeners
-    dailyPicker.addEventListener('change', (e) => { 
-        triggerRender(); 
-        closeSidebar(); 
-        e.target.blur(); 
-    });
-    monthlyPicker.addEventListener('change', (e) => { 
-        triggerRender(); 
-        closeSidebar(); 
-        e.target.blur(); 
-    });
+    const handlePickerChange = (e) => {
+        triggerRender();
+        closeSidebar();
+        dismissPicker(e.target);
+    };
+
+    dailyPicker.addEventListener('change', handlePickerChange);
+    monthlyPicker.addEventListener('change', handlePickerChange);
 
     // Sidebar Reset Logic
     const navOverview = document.getElementById('nav-overview');
@@ -302,6 +300,12 @@ function setupDatePicker() {
         if (sidebarCompareBtn) {
             sidebarCompareBtn.addEventListener('click', openCompareModal);
         }
+
+        // Add change listeners to comparison pickers for auto-dismissal
+        ['compare-d1', 'compare-d2', 'compare-m1', 'compare-m2'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('change', (e) => dismissPicker(e.target));
+        });
     }
 
     if (closeModal) {
@@ -338,14 +342,11 @@ function setupDatePicker() {
             
             if (!v1 || !v2) { alert('Please select both targets to compare.'); return; }
             
-            // Blur comparison inputs to dismiss pickers
-            if (scope === 'daily') {
-                document.getElementById('compare-d1').blur();
-                document.getElementById('compare-d2').blur();
-            } else {
-                document.getElementById('compare-m1').blur();
-                document.getElementById('compare-m2').blur();
-            }
+            // Explicitly dismiss pickers on run
+            ['compare-d1', 'compare-d2', 'compare-m1', 'compare-m2'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) dismissPicker(el);
+            });
 
             renderCompareDashboard(scope, v1, v2);
         });
@@ -363,6 +364,31 @@ function setupDatePicker() {
 
     // Initial Render
     triggerRender();
+}
+
+/**
+ * Aggressive dismissal for mobile date pickers
+ */
+function dismissPicker(el) {
+    if (!el) return;
+    el.blur();
+    
+    // Create a temporary focusable element to steal focus from the system picker
+    const temp = document.createElement('input');
+    temp.setAttribute('type', 'text');
+    temp.style.position = 'fixed';
+    temp.style.top = '-100px';
+    temp.style.left = '-100px';
+    temp.style.opacity = '0';
+    document.body.appendChild(temp);
+    
+    temp.focus();
+    
+    // Small delay to ensure the system UI retracts, then clean up
+    setTimeout(() => {
+        temp.blur();
+        document.body.removeChild(temp);
+    }, 10);
 }
 
 // Minimal Sample Data for Failover
