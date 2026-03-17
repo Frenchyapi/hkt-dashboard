@@ -248,8 +248,16 @@ function setupDatePicker() {
     });
 
     // 5. Regular Listeners
-    dailyPicker.addEventListener('change', () => { triggerRender(); closeSidebar(); });
-    monthlyPicker.addEventListener('change', () => { triggerRender(); closeSidebar(); });
+    dailyPicker.addEventListener('change', (e) => { 
+        triggerRender(); 
+        closeSidebar(); 
+        e.target.blur(); 
+    });
+    monthlyPicker.addEventListener('change', (e) => { 
+        triggerRender(); 
+        closeSidebar(); 
+        e.target.blur(); 
+    });
 
     // Sidebar Reset Logic
     const navOverview = document.getElementById('nav-overview');
@@ -284,6 +292,7 @@ function setupDatePicker() {
     if (compareBtn && modal) {
         const openCompareModal = (e) => {
             e.preventDefault();
+            closeSidebar();
             modal.classList.add('active');
         };
 
@@ -328,6 +337,16 @@ function setupDatePicker() {
             }
             
             if (!v1 || !v2) { alert('Please select both targets to compare.'); return; }
+            
+            // Blur comparison inputs to dismiss pickers
+            if (scope === 'daily') {
+                document.getElementById('compare-d1').blur();
+                document.getElementById('compare-d2').blur();
+            } else {
+                document.getElementById('compare-m1').blur();
+                document.getElementById('compare-m2').blur();
+            }
+
             renderCompareDashboard(scope, v1, v2);
         });
     }

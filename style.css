@@ -670,7 +670,7 @@ input:checked + .slider::before { transform: translateX(22px); }
     display: none;
     align-items: center;
     justify-content: center;
-    z-index: 2000;
+    z-index: 6000;
     opacity: 0;
     transition: opacity 0.3s ease;
 }
