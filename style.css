@@ -12,6 +12,7 @@
     --secondary: #7000ff;
     --accent: #00ff9d;
     --danger: #ff3366;
+    --bg-card: #16191f;
     
     --text-primary: #ffffff;
     --text-muted: #8a8f98;
@@ -34,6 +35,7 @@
     --text-primary: #0f172a;
     --text-muted: #64748b;
     --text-dim: #94a3b8;
+    --bg-card: #ffffff;
     --card-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
 }
 
@@ -308,6 +310,37 @@ tr:hover td { color: var(--text-primary); }
     font-weight: 500;
     outline: none;
     transition: var(--transition);
+    cursor: text;
+}
+
+input[type="date"].glass-input, 
+input[type="date"]#daily-picker,
+input[type="month"].glass-input, 
+input[type="month"]#monthly-picker {
+    cursor: pointer;
+}
+
+select option {
+    background: var(--bg-card);
+    color: var(--text-primary);
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="month"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    filter: invert(var(--calendar-invert, 1));
+    opacity: 0.6;
+    transition: opacity 0.3s ease;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="month"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+}
+
+[data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator,
+[data-theme="light"] input[type="month"]::-webkit-calendar-picker-indicator {
+    --calendar-invert: 0;
 }
 
 .glass-select:focus, .glass-input:focus {
@@ -384,7 +417,6 @@ tr:hover td { color: var(--text-primary); }
 
 /* Theme Switch */
 .theme-switch-wrapper {
-    margin-top: auto;
     padding: 20px 0;
 }
 
@@ -536,6 +568,11 @@ input:checked + .slider::before { transform: translateX(22px); }
         flex-direction: column;
         padding: 80px 24px 40px;
         overflow-y: auto;
+    }
+
+    .sidebar-action-container {
+        display: block !important;
+        margin-bottom: 24px;
     }
 
     .sidebar.active {

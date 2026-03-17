@@ -52,18 +52,23 @@
 
                 <div id="daily-picker-container">
                     <label style="font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700; margin-bottom: 8px; display: block;">Target Date</label>
-                    <input type="date" id="daily-picker" style="width: 100%; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-glass); padding: 8px; border-radius: 8px; font-family: inherit;">
+                    <input type="date" id="daily-picker" onfocus="this.showPicker()" onclick="this.showPicker()" style="width: 100%; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-glass); padding: 8px; border-radius: 8px; font-family: inherit; cursor: pointer;">
                 </div>
 
                 <div id="monthly-picker-container" style="display: none;">
                     <label style="font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700; margin-bottom: 8px; display: block;">Target Month</label>
-                    <select id="monthly-picker" style="width: 100%; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-glass); padding: 8px; border-radius: 8px; font-family: inherit;">
-                        <!-- Populated via JS -->
-                    </select>
+                    <input type="month" id="monthly-picker" onfocus="this.showPicker()" onclick="this.showPicker()" style="width: 100%; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-glass); padding: 8px; border-radius: 8px; font-family: inherit; cursor: pointer;">
                 </div>
-            </div>
-            <div class="sidebar-footer">
-                <div class="theme-switch-wrapper">
+
+                <div class="sidebar-action-container" style="margin-top: 16px; border-top: 1px solid var(--border-glass); padding-top: 16px;">
+                    <button id="sidebar-compare-btn" class="glass-btn-primary" style="width: 100%; margin-top: 0; padding: 10px; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; opacity: 1;"><path d="M18 20V10"></path><path d="M12 20V4"></path><path d="M6 20V14"></path></svg>
+                        Compare
+                    </button>
+                </div>
+
+                <div class="theme-switch-wrapper" style="margin-top: 16px; padding: 16px 0 0; border-top: 1px solid var(--border-glass); display: flex; align-items: center; justify-content: space-between;">
+                    <span style="font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">Appearance</span>
                     <label class="theme-switch" for="checkbox">
                         <input type="checkbox" id="checkbox" />
                         <div class="slider round">
@@ -221,14 +226,14 @@
                 </div>
                 <div id="compare-date-inputs" class="compare-group">
                     <div class="compare-inputs">
-                        <input type="date" id="compare-d1" class="glass-input" style="padding: 12px;">
-                        <input type="date" id="compare-d2" class="glass-input" style="padding: 12px;">
+                        <input type="date" id="compare-d1" onfocus="this.showPicker()" onclick="this.showPicker()" class="glass-input" style="padding: 12px; cursor: pointer;">
+                        <input type="date" id="compare-d2" onfocus="this.showPicker()" onclick="this.showPicker()" class="glass-input" style="padding: 12px; cursor: pointer;">
                     </div>
                 </div>
                 <div id="compare-month-inputs" class="compare-group" style="display:none">
                     <div class="compare-inputs">
-                        <select id="compare-m1" class="glass-input" style="padding: 12px;"></select>
-                        <select id="compare-m2" class="glass-input" style="padding: 12px;"></select>
+                        <input type="month" id="compare-m1" onfocus="this.showPicker()" onclick="this.showPicker()" class="glass-input" style="padding: 12px; cursor: pointer;">
+                        <input type="month" id="compare-m2" onfocus="this.showPicker()" onclick="this.showPicker()" class="glass-input" style="padding: 12px; cursor: pointer;">
                     </div>
                 </div>
                 <button id="execute-compare" class="glass-btn-primary" style="margin-top: 10px; width: 100%;">Run Analytics</button>

@@ -195,14 +195,19 @@ function setupDatePicker() {
 
     console.log('Month Groups:', monthGroups);
 
-    // 2. Populate Monthly Dropdown
-    monthlyPicker.innerHTML = '';
-    Object.entries(monthGroups).sort().reverse().forEach(([key, label]) => {
-        const opt = document.createElement('option');
-        opt.value = key;
-        opt.textContent = label;
-        monthlyPicker.appendChild(opt);
-    });
+    // 2. Populate Monthly Picker Default
+    const sortedMonthKeys = Object.keys(monthGroups).sort().reverse();
+    if (sortedMonthKeys.length > 0) {
+        const latestKey = sortedMonthKeys[0]; // MM-YYYY
+        const [m, y] = latestKey.split('-');
+        monthlyPicker.value = `${y}-${m}`; // Set value as YYYY-MM
+        
+        // Also set comparison month defaults
+        const m1 = document.getElementById('compare-m1');
+        const m2 = document.getElementById('compare-m2');
+        if (m1 && !m1.value) m1.value = `${y}-${m}`;
+        if (m2 && !m2.value) m2.value = `${y}-${m}`;
+    }
 
     // 3. Set Defaults
     // Sort dates
@@ -218,6 +223,12 @@ function setupDatePicker() {
         if (dObj) {
             dailyPicker.value = dObj.iso;
             console.log('Default Daily Value Set:', dailyPicker.value);
+
+            // Set initial values for comparison dates if they exist
+            const compD1 = document.getElementById('compare-d1');
+            const compD2 = document.getElementById('compare-d2');
+            if (compD1 && !compD1.value) compD1.value = dObj.iso;
+            if (compD2 && !compD2.value) compD2.value = dObj.iso;
         }
     }
 
@@ -271,19 +282,17 @@ function setupDatePicker() {
     const monthInputs = document.getElementById('compare-month-inputs');
 
     if (compareBtn && modal) {
-        compareBtn.addEventListener('click', (e) => {
+        const openCompareModal = (e) => {
             e.preventDefault();
             modal.classList.add('active');
-            
-            // Populate month selectors if empty
-            const m1 = document.getElementById('compare-m1');
-            const m2 = document.getElementById('compare-m2');
-            if (m1 && m1.innerHTML === '') {
-                const opts = document.getElementById('monthly-picker').innerHTML;
-                m1.innerHTML = opts;
-                m2.innerHTML = opts;
-            }
-        });
+        };
+
+        compareBtn.addEventListener('click', openCompareModal);
+        
+        const sidebarCompareBtn = document.getElementById('sidebar-compare-btn');
+        if (sidebarCompareBtn) {
+            sidebarCompareBtn.addEventListener('click', openCompareModal);
+        }
     }
 
     if (closeModal) {
@@ -310,8 +319,13 @@ function setupDatePicker() {
     if (executeBtn) {
         executeBtn.addEventListener('click', () => {
             const scope = compareScope.value;
-            const v1 = scope === 'daily' ? document.getElementById('compare-d1').value : document.getElementById('compare-m1').value;
-            const v2 = scope === 'daily' ? document.getElementById('compare-d2').value : document.getElementById('compare-m2').value;
+            let v1 = scope === 'daily' ? document.getElementById('compare-d1').value : document.getElementById('compare-m1').value;
+            let v2 = scope === 'daily' ? document.getElementById('compare-d2').value : document.getElementById('compare-m2').value;
+            
+            if (scope === 'monthly') {
+                if (v1) { const [y, m] = v1.split('-'); v1 = `${m}-${y}`; }
+                if (v2) { const [y, m] = v2.split('-'); v2 = `${m}-${y}`; }
+            }
             
             if (!v1 || !v2) { alert('Please select both targets to compare.'); return; }
             renderCompareDashboard(scope, v1, v2);
@@ -320,7 +334,11 @@ function setupDatePicker() {
 
     function triggerRender() {
         const mode = filterMode.value;
-        const val = mode === 'daily' ? dailyPicker.value : monthlyPicker.value;
+        let val = mode === 'daily' ? dailyPicker.value : monthlyPicker.value;
+        if (mode === 'monthly' && val) {
+            const [y, m] = val.split('-');
+            val = `${m}-${y}`;
+        }
         renderDashboard(mode, val);
     }
 
