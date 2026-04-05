@@ -1140,7 +1140,7 @@ function renderDelaySection(master, mode, filterValue) {
     }
     
     // Avg delay per airline bar chart (all airlines with delays >15min)
-    const sortedAirlines = Object.entries(airlineAvg).sort((a, b) => b[1].avg - a[1].avg).slice(0, 15);
+    const sortedAirlines = Object.entries(airlineAvg).sort((a, b) => b[1].avg - a[1].avg).slice(0, 10);
     initChart('avgDelayChart', 'bar', {
         labels: sortedAirlines.map(a => `${a[0]} (${a[1].count})`),
         datasets: [{
@@ -1212,7 +1212,7 @@ function renderOTPSection(master, mode, filterValue) {
         .map(([code, d]) => ({ code, rate: d.total > 0 ? (d.sumDiff / d.total) : 0, total: d.total }))
         .filter(x => x.total >= 2)
         .sort((a, b) => a.rate - b.rate || b.total - a.total)
-        .slice(0, 15);
+        .slice(0, 10);
     
     initChart('otpAirlineChart', 'bar', {
         labels: sortedOTP.map(x => `${x.code} (${x.total})`),

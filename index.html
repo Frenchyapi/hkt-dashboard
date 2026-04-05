@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Outfit:wght@800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=5.2">
+    <link rel="stylesheet" href="style.css?v=5.3">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -139,50 +139,50 @@
                 <!-- Row 3: Peak Hour -->
                 <div id="card-peak" class="card-glass span-12" style="grid-row: span 6;">
                     <h3 class="chart-title">Peak Hour Operations</h3>
-                    <div class="chart-inner" style="height: 280px;"><canvas id="peakHourChart"></canvas></div>
+                    <div class="chart-inner" style="height: 200px;"><canvas id="peakHourChart"></canvas></div>
                 </div>
 
                 <!-- Row 4: Utilization -->
                 <div id="card-util" class="card-glass span-12" style="grid-row: span 6;">
                     <h3 class="chart-title" style="margin-bottom: 4px;">Contact Bay Utilization (Bays 4-15)</h3>
-                    <div class="chart-inner" style="height: 280px;"><canvas id="utilizationChart"></canvas></div>
+                    <div class="chart-inner" style="height: 200px;"><canvas id="utilizationChart"></canvas></div>
                 </div>
 
                 <!-- Monthly Trend Charts -->
                 <div id="monthly-trends-container" class="span-12" style="grid-column: span 12; display: none;">
                     <div class="card-glass span-12" style="grid-row: span 6;">
                         <h3 class="chart-title">Monthly Flights</h3>
-                        <div class="chart-inner" style="height: 280px;"><canvas id="monthlyFlightsChart"></canvas></div>
+                        <div class="chart-inner" style="height: 200px;"><canvas id="monthlyFlightsChart"></canvas></div>
                     </div>
                     <div class="card-glass span-12" style="grid-row: span 6;">
                         <h3 class="chart-title">Monthly Total Bay Changes</h3>
-                        <div class="chart-inner" style="height: 280px;"><canvas id="monthlyChangesChart"></canvas></div>
+                        <div class="chart-inner" style="height: 200px;"><canvas id="monthlyChangesChart"></canvas></div>
                     </div>
                 </div>
 
                 <!-- Delay Analysis -->
-                <div id="card-delay" class="card-glass span-12" style="grid-row: span 8;">
+                <div id="card-delay" class="card-glass span-12" style="grid-row: span 6;">
                     <h3 class="chart-title">✈ Delay Analysis <span id="delay-threshold-note" style="font-size:0.7rem; color:var(--text-dim); font-weight:400;">(On-Time ≤ 15 min)</span></h3>
                     <div class="delay-layout" style="display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px;">
                         <div style="flex: 1; min-width: 180px; max-width: 240px;">
-                            <canvas id="delayDistChart" style="max-height: 260px;"></canvas>
+                            <canvas id="delayDistChart" style="max-height: 200px;"></canvas>
                         </div>
-                        <div id="top-delay-list" style="flex: 1; min-width: 250px; max-height: 260px; overflow-y: auto; padding-right: 8px;"></div>
+                        <div id="top-delay-list" style="flex: 1; min-width: 250px; max-height: 200px; overflow-y: auto; padding-right: 8px;"></div>
                         <div style="flex: 2; min-width: 300px;">
-                            <div class="chart-inner" style="height: 260px;"><canvas id="avgDelayChart"></canvas></div>
+                            <div class="chart-inner" style="height: 200px;"><canvas id="avgDelayChart"></canvas></div>
                         </div>
                     </div>
                 </div>
 
                 <!-- OTP Scorecard -->
-                <div id="card-otp" class="card-glass span-12" style="grid-row: span 8;">
+                <div id="card-otp" class="card-glass span-12" style="grid-row: span 6;">
                     <h3 class="chart-title">📊 OTP Scorecard</h3>
                     <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px;">
                         <div style="flex: 1; min-width: 300px;">
-                            <div class="chart-inner" style="height: 260px;"><canvas id="otpAirlineChart"></canvas></div>
+                            <div class="chart-inner" style="height: 200px;"><canvas id="otpAirlineChart"></canvas></div>
                         </div>
                         <div style="flex: 1; min-width: 300px;">
-                            <div class="chart-inner" style="height: 260px;"><canvas id="otpTimeslotChart"></canvas></div>
+                            <div class="chart-inner" style="height: 200px;"><canvas id="otpTimeslotChart"></canvas></div>
                         </div>
                     </div>
                 </div>
@@ -190,7 +190,7 @@
                 <!-- Monthly OTP Trend -->
                 <div id="card-otp-trend" class="card-glass span-12" style="grid-row: span 6; display: none;">
                     <h3 class="chart-title">Monthly OTP Trend</h3>
-                    <div class="chart-inner" style="height: 280px;"><canvas id="otpTrendChart"></canvas></div>
+                    <div class="chart-inner" style="height: 200px;"><canvas id="otpTrendChart"></canvas></div>
                 </div>
 
                 <!-- Turnaround Time -->
@@ -202,14 +202,14 @@
                         </select>
                         <div id="turnaround-stats" style="display: flex; gap: 16px; font-size: 0.8rem; flex-wrap: wrap;"></div>
                     </div>
-                    <div class="chart-inner" style="height: 250px;"><canvas id="turnaroundChart"></canvas></div>
+                    <div class="chart-inner" style="height: 200px;"><canvas id="turnaroundChart"></canvas></div>
                 </div>
 
                 <!-- Taxi Time -->
                 <div id="card-taxi" class="card-glass span-12" style="grid-row: span 6;">
                     <h3 class="chart-title">🛬 Taxi Time Analysis</h3>
                     <div id="taxi-stats" style="display: flex; gap: 24px; margin-bottom: 12px; flex-wrap: wrap;"></div>
-                    <div class="chart-inner" style="height: 250px;"><canvas id="taxiChart"></canvas></div>
+                    <div class="chart-inner" style="height: 200px;"><canvas id="taxiChart"></canvas></div>
                 </div>
             </div>
 
@@ -303,6 +303,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=5.2"></script>
+    <script src="app.js?v=5.3"></script>
 </body>
 </html>
