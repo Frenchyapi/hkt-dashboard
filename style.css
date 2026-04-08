@@ -443,12 +443,52 @@ input[type="month"]::-webkit-calendar-picker-indicator:hover {
     margin-top: 2px;
 }
 
-/* OTP Excellence Leaderboard */
+/* OTP Excellence Leaderboard & Responsive Layouts */
 .otp-leaderboard-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    display: flex;
     gap: 12px;
-    margin-bottom: 24px;
+    padding-bottom: 8px;
+}
+
+/* Scrollbar styling for horizontal scroll */
+.otp-leaderboard-grid::-webkit-scrollbar {
+    height: 4px;
+}
+.otp-leaderboard-grid::-webkit-scrollbar-track {
+    background: transparent;
+}
+.otp-leaderboard-grid::-webkit-scrollbar-thumb {
+    background: var(--border-subtle);
+    border-radius: 4px;
+}
+
+/* Vertical to Horizontal Layout Switch */
+@media (min-width: 768px) {
+    .md-row-layout {
+        flex-direction: row !important;
+    }
+    
+    .otp-leaderboard-grid {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+        overflow-x: visible !important;
+        padding-bottom: 0 !important;
+    }
+}
+
+/* Mobile Font Scale Down */
+@media (max-width: 767px) {
+    :root {
+        font-size: 14px; /* Default was likely 16px, effectively -1 step */
+    }
+    
+    .chart-title {
+        font-size: 0.85rem !important;
+    }
+    
+    .otp-award-card {
+        padding: 12px !important;
+    }
 }
 
 .otp-award-card {

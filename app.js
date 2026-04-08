@@ -1319,45 +1319,48 @@ function renderOTPSection(master, mode, filterValue) {
             }
         }
 
-        // Leaderboard Excellence Logic (Requires BOTH ALDT and ATOT)
+        // Fix logic for Excellence Leaderboard (Both legs must be <= 10m)
         if (aldt && sibt && atot && sobt) {
             const dArr = Math.abs(getDelayMinutes(aldt, sibt));
             const dDep = Math.abs(getDelayMinutes(atot, sobt));
             
-            if (!excellenceData[airline]) excellenceData[airline] = { sumScore: 0, sumDiff: 0, count: 0 };
+            if (!excellenceData[airline]) excellenceData[airline] = { total: 0, onTime: 0, sumOnTimeDiff: 0 };
             
-            // Score = max(0, (10 - diff) * 10)
-            const scoreArr = Math.max(0, (10 - dArr) * 10);
-            const scoreDep = Math.max(0, (10 - dDep) * 10);
-            
-            excellenceData[airline].sumScore += (scoreArr + scoreDep);
-            excellenceData[airline].sumDiff += (dArr + dDep);
-            excellenceData[airline].count++;
+            excellenceData[airline].total++;
+            if (dArr <= 10 && dDep <= 10) {
+                excellenceData[airline].onTime++;
+                excellenceData[airline].sumOnTimeDiff += (dArr + dDep);
+            }
         }
     });
 
-    // Render Leaderboard
+    // Render Volume-Based Leaderboard
     const leaderboardEl = document.getElementById('otp-leaderboard');
     if (leaderboardEl) {
         const topPerformers = Object.entries(excellenceData)
             .map(([code, d]) => ({
                 code,
-                score: Math.round((d.sumScore / (d.count * 200)) * 100),
-                avgDiff: (d.sumDiff / (d.count * 2)).toFixed(1),
-                total: d.count
+                onTime: d.onTime,
+                total: d.total,
+                rate: Math.round((d.onTime / d.total) * 100),
+                avgDiff: d.onTime > 0 ? (d.sumOnTimeDiff / (d.onTime * 2)).toFixed(1) : 0
             }))
-            .filter(x => x.total >= 1)
-            .sort((a, b) => b.score - a.score || a.avgDiff - b.avgDiff)
+            .filter(x => x.onTime > 0)
+            .sort((a, b) => b.onTime - a.onTime || b.rate - a.rate)
             .slice(0, 5);
 
         if (topPerformers.length === 0) {
-            leaderboardEl.innerHTML = '<div style="grid-column: 1/-1; color: var(--text-dim); font-size: 0.8rem; text-align: center; padding: 20px;">Insufficient turnaround data (ALDT + ATOT required) for Leaderboard</div>';
+            leaderboardEl.innerHTML = '<div style="grid-column: 1/-1; color: var(--text-dim); font-size: 0.8rem; text-align: center; padding: 20px;">No flights met the ≤ 10m excellence criteria (ALDT + ATOT required)</div>';
         } else {
             leaderboardEl.innerHTML = topPerformers.map((p, i) => `
-                <div class="otp-award-card ${i === 0 ? 'rank-1' : ''}">
+                <div class="otp-award-card ${i === 0 ? 'rank-1' : ''}" style="min-width: 210px; flex-shrink: 0; scroll-snap-align: start;">
                     <div class="otp-card-airline">${p.code}</div>
-                    <div class="otp-card-score">${p.score}%</div>
-                    <div class="otp-card-diff">Avg Diff: ${p.avgDiff}m</div>
+                    <div class="otp-card-score" style="font-size: 1.5rem; color: #10b981; margin: 4px 0;">${p.onTime}/${p.total} Flights</div>
+                    <div class="otp-card-diff" style="font-size: 0.65rem; opacity: 0.8;">
+                        Rate: <span style="color:var(--text-primary); font-weight:600;">${p.rate}%</span> 
+                        <span style="margin: 0 4px; opacity: 0.3;">|</span> 
+                        Avg Diff: <span style="color:var(--text-primary); font-weight:600;">${p.avgDiff}m</span>
+                    </div>
                 </div>
             `).join('');
         }
