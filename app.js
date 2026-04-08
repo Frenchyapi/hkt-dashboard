@@ -1344,12 +1344,12 @@ function renderOTPSection(master, mode, filterValue) {
         const topPerformers = Object.entries(excellenceData)
             .map(([code, d]) => ({
                 code,
-                points: d.totalPoints,
+                avgScore: d.totalFlights > 0 ? d.totalPoints / d.totalFlights : 0,
                 flights: d.totalFlights,
                 avgArr: (d.sumArrPoints / d.totalFlights).toFixed(1),
                 avgDep: (d.sumDepPoints / d.totalFlights).toFixed(1)
             }))
-            .sort((a, b) => b.points - a.points || b.flights - a.flights)
+            .sort((a, b) => b.avgScore - a.avgScore || b.flights - a.flights)
             .slice(0, 5);
 
         if (topPerformers.length === 0) {
@@ -1359,7 +1359,7 @@ function renderOTPSection(master, mode, filterValue) {
                 <div class="otp-award-card ${i === 0 ? 'rank-1' : ''}">
                     <div class="rank-badge">RANK ${i + 1}</div>
                     <div class="otp-card-airline">${p.code}</div>
-                    <div class="otp-card-score">${p.points} Pts</div>
+                    <div class="otp-card-score">${p.avgScore.toFixed(1)} Avg Pts</div>
                     <div class="otp-card-diff">
                         ${p.flights} Flights <span style="opacity: 0.3; margin: 0 4px;">|</span> Arr: ${p.avgArr} / Dep: ${p.avgDep} avg
                     </div>
@@ -1368,18 +1368,22 @@ function renderOTPSection(master, mode, filterValue) {
         }
     }
     
-    // OTP Chart Points
+    // OTP Chart Points (Normalized to Average)
     const sortedOTP = Object.entries(airlineOTP)
-        .map(([code, d]) => ({ code, points: d.points, total: d.total }))
-        .sort((a, b) => b.points - a.points)
+        .map(([code, d]) => ({ 
+            code, 
+            avgScore: d.total > 0 ? d.points / d.total : 0, 
+            total: d.total 
+        }))
+        .sort((a, b) => b.avgScore - a.avgScore || b.total - a.total)
         .slice(0, 15);
     
     initChart('otpAirlineChart', 'bar', {
         labels: sortedOTP.map(x => `${x.code}`),
         datasets: [{
-            label: 'Total Performance Points',
-            data: sortedOTP.map(x => x.points),
-            backgroundColor: sortedOTP.map(x => x.points >= 0 ? '#4f46e5' : '#f43f5e'),
+            label: 'Avg Performance Points',
+            data: sortedOTP.map(x => x.avgScore.toFixed(2)),
+            backgroundColor: sortedOTP.map(x => x.avgScore >= 4.5 ? '#4f46e5' : x.avgScore >= 3 ? '#6366f1' : '#f43f5e'),
             borderRadius: 2,
             barPercentage: 0.5
         }]
@@ -1388,7 +1392,7 @@ function renderOTPSection(master, mode, filterValue) {
         scales: { 
             x: { 
                 beginAtZero: true, 
-                title: { display: false },
+                title: { display: true, text: 'Avg Points per Flight', color: '#71717a', font: { size: 9 } },
                 ticks: { font: { size: 10 }, color: '#71717a' }
             },
             y: { ticks: { autoSkip: false, font: { size: 10 }, color: '#f4f4f5' } }
@@ -1396,14 +1400,17 @@ function renderOTPSection(master, mode, filterValue) {
     });
 
     const sortedSlots = Object.entries(timeslotOTP)
-        .map(([slot, d]) => ({ slot, points: d.points }))
+        .map(([slot, d]) => ({ 
+            slot, 
+            avgScore: d.total > 0 ? d.points / d.total : 0 
+        }))
         .sort((a, b) => a.slot.localeCompare(b.slot));
 
     initChart('otpTimeslotChart', 'bar', {
         labels: sortedSlots.map(x => x.slot),
         datasets: [{
-            label: 'Total Performance Points',
-            data: sortedSlots.map(x => x.points),
+            label: 'Avg Performance Points',
+            data: sortedSlots.map(x => x.avgScore.toFixed(2)),
             backgroundColor: '#4f46e566',
             borderColor: '#6366f1',
             borderWidth: 1,
@@ -1411,7 +1418,11 @@ function renderOTPSection(master, mode, filterValue) {
         }]
     }, {
         scales: {
-            y: { beginAtZero: true, ticks: { font: { size: 10 }, color: '#71717a' } },
+            y: { 
+                beginAtZero: true, 
+                title: { display: true, text: 'Avg Points', color: '#71717a', font: { size: 9 } },
+                ticks: { font: { size: 10 }, color: '#71717a' } 
+            },
             x: { ticks: { font: { size: 10 }, color: '#71717a' } }
         }
     });
