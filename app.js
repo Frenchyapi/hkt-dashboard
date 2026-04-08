@@ -973,9 +973,12 @@ function initChart(id, type, data, options = {}) {
     const canvas = document.getElementById(id);
     if (!canvas) return;
     
-    // Obsidian Theme Defaults
-    const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() || '#8a8f98';
-    const gridColor = 'rgba(255, 255, 255, 0.03)';
+    // Enterprise Slate Palette
+    const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+    const textColor = isDark ? '#94a3b8' : '#475569';
+    const gridColor = isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.04)';
+    const tooltipBg = isDark ? '#020617' : '#ffffff';
+    const tooltipBorder = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
     
     charts[id] = new Chart(canvas.getContext('2d'), {
         type, data, options: { 
@@ -984,25 +987,27 @@ function initChart(id, type, data, options = {}) {
             plugins: { 
                 legend: { display: false },
                 tooltip: { 
-                    backgroundColor: '#101216', 
-                    borderColor: 'rgba(255,255,255,0.08)', 
+                    backgroundColor: tooltipBg, 
+                    borderColor: tooltipBorder, 
                     borderWidth: 1, 
-                    titleColor: '#fff', 
-                    bodyColor: '#8a8f98',
-                    padding: 12,
-                    cornerRadius: 12,
-                    usePointStyle: true
+                    titleColor: isDark ? '#fff' : '#0f172a', 
+                    bodyColor: textColor,
+                    padding: 10,
+                    cornerRadius: 8,
+                    usePointStyle: true,
+                    boxPadding: 4,
+                    bodyFont: { family: 'Manrope', size: 11 }
                 }
             },
             scales: type !== 'doughnut' ? {
                 y: { 
-                    grid: { color: gridColor }, 
-                    ticks: { color: textColor, font: { family: 'Manrope', size: 10, weight: 600 } }, 
+                    grid: { color: gridColor, drawTicks: false }, 
+                    ticks: { color: textColor, font: { family: 'Manrope', size: 10, weight: 500 }, padding: 8 }, 
                     border: { display: false } 
                 },
                 x: { 
                     grid: { display: false }, 
-                    ticks: { color: textColor, font: { family: 'Manrope', size: 10, weight: 600 } }, 
+                    ticks: { color: textColor, font: { family: 'Manrope', size: 10, weight: 500 }, padding: 8 }, 
                     border: { display: false } 
                 }
             } : {},
@@ -1104,14 +1109,30 @@ function renderDelaySection(master, mode, filterValue) {
         else over30++;
     });
     
-    const distLabels = ['On-Time (≤15m)', '16-30 min', '>30 min'];
+    const distLabels = ['On-Time', '16-30 min', '>30 min'];
     const distData = [onTime, under30, over30];
-    const distColors = ['#00ff9d', '#f59e0b', '#ef4444'];
+    const distColors = ['#10b981', '#f59e0b', '#ef4444']; // Emerald, Amber, Red (Corporate Shades)
     
     initChart('delayDistChart', 'doughnut', {
         labels: distLabels,
         datasets: [{ data: distData, backgroundColor: distColors, borderWidth: 0 }]
-    }, { plugins: { legend: { display: true, position: 'bottom', labels: { color: '#8a8f98', font: { size: 10 }, boxWidth: 10 } } }, cutout: '65%', maintainAspectRatio: false });
+    }, { 
+        plugins: { 
+            legend: { 
+                display: true, 
+                position: 'bottom', 
+                labels: { 
+                    color: '#94a3b8', 
+                    font: { size: 10, family: 'Manrope' }, 
+                    boxWidth: 8,
+                    usePointStyle: true,
+                    padding: 15
+                } 
+            } 
+        }, 
+        cutout: '75%', 
+        maintainAspectRatio: false 
+    });
     
     // Top 10 delayed airlines (avg delay for flights >15min only)
     const airlineAvg = {};
@@ -1146,13 +1167,17 @@ function renderDelaySection(master, mode, filterValue) {
         datasets: [{
             label: 'Avg Delay (min)',
             data: sortedAirlines.map(a => Math.round(a[1].avg)),
-            backgroundColor: sortedAirlines.map(a => a[1].avg > 30 ? '#ef4444' : '#f59e0b'),
-            borderRadius: 4
+            backgroundColor: sortedAirlines.map(a => a[1].avg > 30 ? '#ef4444cc' : '#f59e0bcc'),
+            borderRadius: 2
         }]
     }, { 
         indexAxis: 'y', 
         scales: { 
-            x: { beginAtZero: true, title: { display: true, text: 'Minutes', color: '#8a8f98', font: { size: 10 } } },
+            x: { 
+                beginAtZero: true, 
+                title: { display: true, text: 'Minutes', color: '#94a3b8', font: { size: 10, weight: 600 } },
+                grid: { drawBorder: false, color: 'rgba(148, 163, 184, 0.1)' }
+            },
             y: { ticks: { autoSkip: false, font: { size: 10 } } }
         } 
     });
@@ -1219,16 +1244,23 @@ function renderOTPSection(master, mode, filterValue) {
         datasets: [{
             label: 'Avg Variance (min)',
             data: sortedOTP.map(x => Math.round(x.rate)),
-            backgroundColor: sortedOTP.map(x => x.rate <= 15 ? '#00ff9d' : x.rate <= 30 ? '#f59e0b' : '#ef4444'),
-            borderRadius: 4
+            backgroundColor: sortedOTP.map(x => x.rate <= 15 ? '#10b981cc' : x.rate <= 30 ? '#f59e0bcc' : '#ef4444cc'),
+            borderRadius: 2
         }]
     }, {
         indexAxis: 'y',
         scales: { 
-            x: { beginAtZero: true, title: { display: true, text: 'Minutes', color: '#8a8f98', font: { size: 10 } } },
+            x: { 
+                beginAtZero: true, 
+                title: { display: true, text: 'Minutes', color: '#94a3b8', font: { size: 10, weight: 600 } },
+                grid: { drawBorder: false, color: 'rgba(148, 163, 184, 0.1)' }
+            },
             y: { ticks: { autoSkip: false, font: { size: 10 } } }
         },
-        plugins: { legend: { display: false }, title: { display: true, text: 'Avg Schedule Variance per Airline', color: '#8a8f98', font: { size: 11 } } }
+        plugins: { 
+            legend: { display: false }, 
+            title: { display: true, text: 'Avg Schedule Variance per Airline', color: '#94a3b8', font: { size: 11, family: 'Manrope', weight: 600 } } 
+        }
     });
     
     // Variance per timeslot
@@ -1240,13 +1272,22 @@ function renderOTPSection(master, mode, filterValue) {
             data: slots.map(s => s[1].total > 0 ? Math.round(s[1].sumDiff / s[1].total) : 0),
             backgroundColor: slots.map(s => {
                 const rate = s[1].total > 0 ? s[1].sumDiff / s[1].total : 0;
-                return rate <= 15 ? '#00ff9d' : rate <= 30 ? '#f59e0b' : '#ef4444';
+                return rate <= 15 ? '#10b981cc' : rate <= 30 ? '#f59e0bcc' : '#ef4444cc';
             }),
-            borderRadius: 4
+            borderRadius: 2
         }]
     }, {
-        scales: { y: { beginAtZero: true, title: { display: true, text: 'Minutes', color: '#8a8f98', font: { size: 10 } } } },
-        plugins: { legend: { display: false }, title: { display: true, text: 'Avg Variance per Time Slot', color: '#8a8f98', font: { size: 11 } } }
+        scales: { 
+            y: { 
+                beginAtZero: true, 
+                title: { display: true, text: 'Minutes', color: '#94a3b8', font: { size: 10, weight: 600 } },
+                grid: { drawBorder: false, color: 'rgba(148, 163, 184, 0.1)' }
+            } 
+        },
+        plugins: { 
+            legend: { display: false }, 
+            title: { display: true, text: 'Avg Variance per Time Slot', color: '#94a3b8', font: { size: 11, family: 'Manrope', weight: 600 } } 
+        }
     });
     
     // Monthly Variance Trend
@@ -1271,9 +1312,9 @@ function renderOTPSection(master, mode, filterValue) {
             datasets: [{
                 label: 'Avg Variance (min)',
                 data: days.map(d => dailyOTP[d].total > 0 ? Math.round(dailyOTP[d].sumDiff / dailyOTP[d].total) : 0),
-                borderColor: '#00f2ff', backgroundColor: 'rgba(0,242,255,0.1)', fill: true, tension: 0.4
+                borderColor: '#6366f1', backgroundColor: 'rgba(99, 102, 241, 0.1)', fill: true, tension: 0.4
             }]
-        }, { scales: { y: { beginAtZero: true, title: { display: true, text: 'Minutes', color: '#8a8f98', font: { size: 10 } } } } });
+        }, { scales: { y: { beginAtZero: true, title: { display: true, text: 'Minutes', color: '#94a3b8', font: { size: 10, weight: 600 } } } } });
     }
 }
 
@@ -1356,10 +1397,17 @@ function renderTurnaroundSection(master) {
             datasets: [{
                 label: 'Flights',
                 data: bLabels.map(l => buckets[l]),
-                backgroundColor: '#00f2ff',
-                borderRadius: 4
+                backgroundColor: '#6366f1cc',
+                borderRadius: 2
             }]
-        }, { scales: { y: { beginAtZero: true } } });
+        }, { 
+            scales: { 
+                y: { 
+                    beginAtZero: true,
+                    grid: { drawBorder: false, color: 'rgba(148, 163, 184, 0.1)' }
+                } 
+            } 
+        });
     };
     
     dropdown.onchange = renderTurnaround;
@@ -1412,8 +1460,8 @@ function renderTaxiTimeSection(master) {
     
     if (statsEl) {
         statsEl.innerHTML = `
-            <div class="stat-pill"><span class="stat-label">Avg Taxi-In</span><span class="stat-value" style="color:#00f2ff;">${avgIn}m</span></div>
-            <div class="stat-pill"><span class="stat-label">Avg Taxi-Out</span><span class="stat-value" style="color:#7000ff;">${avgOut}m</span></div>
+            <div class="stat-pill"><span class="stat-label">Avg Taxi-In</span><span class="stat-value" style="color:var(--primary);">${avgIn}m</span></div>
+            <div class="stat-pill"><span class="stat-label">Avg Taxi-Out</span><span class="stat-value" style="color:var(--secondary);">${avgOut}m</span></div>
             <div class="stat-pill"><span class="stat-label">Samples In</span><span class="stat-value">${taxiIn.length}</span></div>
             <div class="stat-pill"><span class="stat-label">Samples Out</span><span class="stat-value">${taxiOut.length}</span></div>
         `;
@@ -1431,14 +1479,14 @@ function renderTaxiTimeSection(master) {
             {
                 label: 'Avg Taxi-In (min)',
                 data: hours.map(h => hourlyTaxi[h].in.length > 0 ? Math.round(hourlyTaxi[h].in.reduce((a, b) => a + b, 0) / hourlyTaxi[h].in.length) : 0),
-                backgroundColor: '#00f2ff',
-                borderRadius: 4
+                backgroundColor: '#6366f1',
+                borderRadius: 2
             },
             {
                 label: 'Avg Taxi-Out (min)',
                 data: hours.map(h => hourlyTaxi[h].out.length > 0 ? Math.round(hourlyTaxi[h].out.reduce((a, b) => a + b, 0) / hourlyTaxi[h].out.length) : 0),
-                backgroundColor: '#7000ff',
-                borderRadius: 4
+                backgroundColor: '#94a3b8',
+                borderRadius: 2
             }
         ]
     }, { scales: { y: { beginAtZero: true, title: { display: true, text: 'Minutes', color: '#8a8f98', font: { size: 10 } } } } });
