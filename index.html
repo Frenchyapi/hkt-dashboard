@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VTSP Apron Management Dashboard</title>
+    <title>Baylink HKT Apron Analytics Dashboard</title>
     <!-- Favicon: Aircraft icon -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z'/></svg>">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23eab308' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z'/></svg>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Outfit:wght@800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=5.4">
+    <link rel="stylesheet" href="style.css?v=5.5">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -20,8 +20,8 @@
     <!-- Mobile Header -->
     <header class="mobile-header">
         <div class="mobile-logo">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px; color: var(--secondary);"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>
-            <span class="logo-accent" style="color: var(--text-primary); font-weight: 700;">Bay</span><span style="color: var(--text-muted);">link</span>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#eab308" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><path d="M12 2L4.5 9V22H19.5V9L12 2Z"></path><path d="M12 2V22"></path><path d="M4.5 9H19.5"></path></svg>
+            <span class="logo-accent" style="color: #eab308; font-weight: 800; font-family: var(--font-logo-accent);">BAYLINK</span><span style="color: var(--text-muted); font-size: 0.65rem; margin-left: 4px; letter-spacing: 0.1em; font-weight: 600;">HKT</span>
         </div>
         <button id="mobile-filter-toggle" class="mobile-toggle-btn">
             <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
@@ -35,8 +35,11 @@
                 <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
             <div class="logo">
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--text-muted);"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>
-                <span class="logo-accent" style="color: var(--text-primary); font-weight: 700;">Bay</span><span style="color: var(--text-muted);">link</span>
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#eab308" stroke-width="2.5"><path d="M12 2L4.5 9V22H19.5V9L12 2Z"></path><path d="M12 2V22"></path><path d="M4.5 9H19.5"></path></svg>
+                <div style="display: flex; flex-direction: column; line-height: 1;">
+                    <span class="logo-accent" style="color: #eab308; font-weight: 800; font-family: var(--font-logo-accent); letter-spacing: -0.02em;">BAYLINK</span>
+                    <span style="color: var(--text-dim); font-size: 0.6rem; letter-spacing: 0.25em; font-weight: 700; margin-top: 2px;">ANALYTICS</span>
+                </div>
             </div>
             <nav class="nav-menu">
                 <a href="#" class="nav-item active" id="nav-overview">
@@ -188,9 +191,19 @@
                         <span style="font-size: 0.65rem; color: #10b981; background: rgba(16, 185, 129, 0.1); padding: 2px 8px; border-radius: 4px; font-weight: 700; display: inline-block;">OTP EXCELLENCE AWARD (DIFF ≤ 10m)</span>
                     </div>
                     
-                    <!-- Row 1: Leaderboard (Horizontal Scroll on Mobile) -->
-                    <div id="otp-leaderboard" class="otp-leaderboard-grid" style="overflow-x: auto; display: flex; gap: 12px; padding-bottom: 12px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;">
-                        <!-- Dynamically populated by app.js -->
+                    <!-- Row 1: Premium Award Carousel -->
+                    <div class="otp-carousel-wrapper">
+                        <button class="otp-nav-btn otp-nav-prev" onclick="document.getElementById('otp-leaderboard').scrollBy({left: -240, behavior: 'smooth'})">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                        </button>
+                        
+                        <div id="otp-leaderboard" class="otp-carousel-viewport">
+                            <!-- Dynamically populated by app.js -->
+                        </div>
+                        
+                        <button class="otp-nav-btn otp-nav-next" onclick="document.getElementById('otp-leaderboard').scrollBy({left: 240, behavior: 'smooth'})">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        </button>
                     </div>
 
                     <!-- Row 2: Charts (Vertical Stack on Mobile, Horizontal on Desktop) -->

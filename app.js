@@ -1363,13 +1363,12 @@ function renderOTPSection(master, mode, filterValue) {
             leaderboardEl.innerHTML = '<div style="grid-column: 1/-1; color: var(--text-dim); font-size: 0.8rem; text-align: center; padding: 20px;">No flights met the ≤ 10m excellence criteria (ALDT + ATOT required)</div>';
         } else {
             leaderboardEl.innerHTML = topPerformers.map((p, i) => `
-                <div class="otp-award-card ${i === 0 ? 'rank-1' : ''}" style="min-width: 210px; flex-shrink: 0; scroll-snap-align: start;">
+                <div class="otp-award-card ${i === 0 ? 'rank-1' : ''}">
+                    <div class="rank-badge">RANK ${i + 1}</div>
                     <div class="otp-card-airline">${p.code}</div>
-                    <div class="otp-card-score" style="font-size: 1.5rem; color: #10b981; margin: 4px 0;">${p.onTime}/${p.total} Flights</div>
-                    <div class="otp-card-diff" style="font-size: 0.65rem; opacity: 0.8;">
-                        Rate: <span style="color:var(--text-primary); font-weight:600;">${p.rate}%</span> 
-                        <span style="margin: 0 4px; opacity: 0.3;">|</span> 
-                        Avg Diff: <span style="color:var(--text-primary); font-weight:600;">${p.avgDiff}m</span>
+                    <div class="otp-card-score">${p.onTime}/${p.total} Flights</div>
+                    <div class="otp-card-diff">
+                        On-Time Rate: ${p.rate}% <span style="opacity: 0.3; margin: 0 4px;">|</span> Avg Diff: ${p.avgDiff}m
                     </div>
                 </div>
             `).join('');

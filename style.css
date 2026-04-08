@@ -443,117 +443,144 @@ input[type="month"]::-webkit-calendar-picker-indicator:hover {
     margin-top: 2px;
 }
 
-/* OTP Excellence Leaderboard & Responsive Layouts */
-.otp-leaderboard-grid {
+/* OTP Excellence Carousel & Award Cards */
+.otp-carousel-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.otp-carousel-viewport {
     display: flex;
-    gap: 12px;
-    padding-bottom: 8px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 16px;
+    padding: 24px 4px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    /* Edge fading mask */
+    mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
 }
 
-/* Scrollbar styling for horizontal scroll */
-.otp-leaderboard-grid::-webkit-scrollbar {
-    height: 4px;
-}
-.otp-leaderboard-grid::-webkit-scrollbar-track {
-    background: transparent;
-}
-.otp-leaderboard-grid::-webkit-scrollbar-thumb {
-    background: var(--border-subtle);
-    border-radius: 4px;
-}
-
-/* Vertical to Horizontal Layout Switch */
-@media (min-width: 768px) {
-    .md-row-layout {
-        flex-direction: row !important;
-    }
-    
-    .otp-leaderboard-grid {
-        display: grid !important;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
-        overflow-x: visible !important;
-        padding-bottom: 0 !important;
-    }
-}
-
-/* Mobile Font Scale Down */
-@media (max-width: 767px) {
-    :root {
-        font-size: 14px; /* Default was likely 16px, effectively -1 step */
-    }
-    
-    .chart-title {
-        font-size: 0.85rem !important;
-    }
-    
-    .otp-award-card {
-        padding: 12px !important;
-    }
+.otp-carousel-viewport::-webkit-scrollbar {
+    display: none;
 }
 
 .otp-award-card {
+    min-width: 200px;
+    flex-basis: 0;
+    flex-grow: 1;
+    flex-shrink: 0;
+    scroll-snap-align: center;
     background: #09090b; /* Zinc 950 */
     border: 1px solid var(--border-subtle);
     border-radius: 12px;
-    padding: 16px;
+    padding: 24px 16px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
     text-align: center;
+    position: relative;
     transition: var(--transition);
 }
 
+.otp-award-card:hover { border-color: #eab30866; background: #121215; transform: translateY(-2px); }
+
 .otp-award-card.rank-1 {
-    background: #09090b;
-    border-color: rgba(16, 185, 129, 0.4);
-    box-shadow: 0 0 15px rgba(16, 185, 129, 0.05);
-    position: relative;
-    overflow: hidden;
+    border-color: rgba(234, 179, 8, 0.4);
+    background: linear-gradient(180deg, #09090b 0%, #121215 100%);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
-.otp-award-card.rank-1::after {
-    content: "RANK 1";
+.rank-badge {
     position: absolute;
-    top: 6px;
-    right: 6px;
-    font-size: 0.5rem;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-dim);
+    font-size: 0.65rem;
     font-weight: 800;
-    color: #10b981;
-    letter-spacing: 0.1em;
-    padding: 2px 6px;
-    background: rgba(16, 185, 129, 0.1);
-    border-radius: 4px;
+    padding: 4px 12px;
+    border-radius: 100px;
+    white-space: nowrap;
+    z-index: 5;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.rank-1 .rank-badge {
+    background: #eab308;
+    color: #000;
+    border-color: #eab308;
 }
 
 .otp-card-airline {
-    font-size: 0.85rem;
-    font-weight: 700;
-    color: var(--text-muted);
-    margin-bottom: 8px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    margin-bottom: 12px;
     text-transform: uppercase;
 }
 
-.rank-1 .otp-card-airline {
-    color: var(--text-primary);
-}
+.rank-1 .otp-card-airline { color: #eab308; }
 
 .otp-card-score {
-    font-size: 1.8rem;
+    font-size: 1.85rem;
     font-weight: 800;
     font-family: var(--font-heading);
-    color: var(--text-primary);
+    color: #eab308; /* Gold Primary Value */
     line-height: 1;
+    margin-bottom: 4px;
 }
 
-.rank-1 .otp-card-score {
-    color: #10b981; /* Emerald 400 */
-}
+.otp-award-card:not(.rank-1) .otp-card-score { color: var(--text-primary); }
 
 .otp-card-diff {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     color: var(--text-dim);
+    font-weight: 600;
     margin-top: 4px;
+}
+
+.otp-nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 36px;
+    height: 36px;
+    background: rgba(24, 24, 27, 0.8);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border-subtle);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    cursor: pointer;
+    z-index: 10;
+    transition: var(--transition);
+    opacity: 0;
+}
+
+.otp-carousel-wrapper:hover .otp-nav-btn { opacity: 1; }
+.otp-nav-btn:hover { background: #27272a; color: #fff; border-color: var(--border-strong); }
+
+.otp-nav-prev { left: -18px; }
+.otp-nav-next { right: -18px; }
+
+/* Responsive Grid fix for Charts row */
+.responsive-chart-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+    width: 100%;
+}
+
+@media (min-width: 1024px) {
+    .responsive-chart-grid { grid-template-columns: 1fr 1fr; }
 }
 
 .theme-switch {
