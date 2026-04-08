@@ -818,13 +818,21 @@ function renderCharts(logs, master, mode, filterValue) {
     const utilCounts = Object.values(usage);
     initChart('utilizationChart', 'bar', {
         labels: Object.keys(usage).map(b => `Bay ${b}`),
-        datasets: [{ label: 'Usage Count', data: utilCounts, backgroundColor: utilColors, borderRadius: 4 }]
+        datasets: [{ 
+            label: 'Usage Count', 
+            data: utilCounts, 
+            backgroundColor: '#6366f1', 
+            borderRadius: { topLeft: 4, topRight: 4 },
+            barPercentage: 0.6
+        }]
     }, {
         scales: {
             y: {
-                beginAtZero: false,
-                suggestedMin: Math.floor(Math.min(...utilCounts) * 0.9),
-                suggestedMax: Math.ceil(Math.max(...utilCounts) * 1.1)
+                beginAtZero: true,
+                ticks: { font: { size: 10 }, color: '#71717a' }
+            },
+            x: {
+                ticks: { font: { size: 10 }, color: '#71717a' }
             }
         }
     });
@@ -855,34 +863,34 @@ function renderCharts(logs, master, mode, filterValue) {
         }
     });
 
-    // Peak Style: Single Peak, Vibrant Colors for all
-    const maxHour = [...hourlyData].sort((a,b) => (b.contact + b.remote) - (a.contact + a.remote))[0].hour;
-    
-    // Modern 2026 Color Pairs
-    const colors = {
-        standard: { C: '#00f2ff', R: '#7000ff' }, // Cyan / Purple
-        peak: { C: '#00ff9d', R: '#059669' }      // Emerald / Deep Green
-    };
+    // Peak Style: Strict Enterprise Palette
 
     initChart('peakHourChart', 'bar', {
         labels: hourlyData.map(d => `${String(d.hour).padStart(2, '0')}:00`),
         datasets: [
             { 
-                label: 'Contact (A/C)', 
+                label: 'Contact', 
                 data: hourlyData.map(d => d.contact), 
                 stack: 'ac',
-                backgroundColor: hourlyData.map(d => d.hour === maxHour && (d.contact+d.remote)>0 ? colors.peak.C : colors.standard.C) 
+                backgroundColor: '#2563eb',
+                barPercentage: 0.6,
+                categoryPercentage: 0.8
             },
             { 
-                label: 'Remote (A/C)', 
+                label: 'Remote', 
                 data: hourlyData.map(d => d.remote), 
                 stack: 'ac',
-                backgroundColor: hourlyData.map(d => d.hour === maxHour && (d.contact+d.remote)>0 ? colors.peak.R : colors.standard.R) 
+                backgroundColor: '#64748b',
+                barPercentage: 0.6,
+                categoryPercentage: 0.8
             }
         ]
     }, {
         plugins: { tooltip: { callbacks: { afterBody: (ctx) => `Bay Changes: ${hourlyData[ctx[0].dataIndex].changes}` } } },
-        scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, beginAtZero: true, ticks: { stepSize: 5 } } }
+        scales: { 
+            x: { stacked: true, grid: { display: false }, ticks: { font: { size: 10 }, color: '#71717a' } }, 
+            y: { stacked: true, beginAtZero: true, ticks: { font: { size: 10 }, color: '#71717a' } } 
+        }
     });
 
     // 4. Monthly Trend Analysis
@@ -904,31 +912,37 @@ function renderCharts(logs, master, mode, filterValue) {
         const flightData = labels.map(d => trend[d].flights);
         const changeData = labels.map(d => trend[d].changes);
         
-        // Single Peak Logic (Emerald for Flights, Pink for Changes)
-        const maxF = Math.max(...flightData);
-        const maxC = Math.max(...changeData);
-        
-        const fColors = flightData.map(v => (v === maxF && v > 0) ? '#00ff9d' : '#00f2ff');
-        const cColors = changeData.map(v => (v === maxC && v > 0) ? '#ff70ff' : '#f59e0b');
-
         initChart('monthlyFlightsChart', 'bar', {
             labels,
-            datasets: [{ label: 'Flights', data: flightData, borderRadius: 4, backgroundColor: fColors }]
+            datasets: [{ 
+                label: 'Flights', 
+                data: flightData, 
+                backgroundColor: '#2563eb',
+                borderRadius: 2,
+                barPercentage: 0.6
+            }]
         }, { 
             scales: { 
-                y: { 
-                    beginAtZero: false, 
-                    // Improved scaling for Day 9 stability (318 vs 350)
-                    suggestedMin: Math.min(...flightData) - 20,
-                    suggestedMax: Math.max(...flightData) + 10
-                } 
+                y: { beginAtZero: true, ticks: { font: { size: 10 }, color: '#71717a' } },
+                x: { ticks: { font: { size: 10 }, color: '#71717a' } }
             } 
         });
         
         initChart('monthlyChangesChart', 'bar', {
             labels,
-            datasets: [{ label: 'Changes', data: changeData, borderRadius: 4, backgroundColor: cColors }]
-        }, { scales: { y: { beginAtZero: true } } });
+            datasets: [{ 
+                label: 'Changes', 
+                data: changeData, 
+                backgroundColor: '#f59e0b',
+                borderRadius: 2,
+                barPercentage: 0.6
+            }]
+        }, { 
+            scales: { 
+                y: { beginAtZero: true, ticks: { font: { size: 10 }, color: '#71717a' } },
+                x: { ticks: { font: { size: 10 }, color: '#71717a' } }
+            } 
+        });
     }
 }
 
@@ -973,12 +987,11 @@ function initChart(id, type, data, options = {}) {
     const canvas = document.getElementById(id);
     if (!canvas) return;
     
-    // Enterprise Slate Palette
     const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
-    const textColor = isDark ? '#94a3b8' : '#475569';
-    const gridColor = isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.04)';
-    const tooltipBg = isDark ? '#020617' : '#ffffff';
-    const tooltipBorder = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+    const textColor = isDark ? '#a1a1aa' : '#52525b';
+    const gridColor = isDark ? '#27272a' : '#e4e4e7';
+    const tooltipBg = isDark ? '#09090b' : '#ffffff';
+    const tooltipBorder = isDark ? '#27272a' : '#e4e4e7';
     
     charts[id] = new Chart(canvas.getContext('2d'), {
         type, data, options: { 
@@ -990,18 +1003,18 @@ function initChart(id, type, data, options = {}) {
                     backgroundColor: tooltipBg, 
                     borderColor: tooltipBorder, 
                     borderWidth: 1, 
-                    titleColor: isDark ? '#fff' : '#0f172a', 
+                    titleColor: isDark ? '#f4f4f5' : '#09090b', 
                     bodyColor: textColor,
-                    padding: 10,
-                    cornerRadius: 8,
+                    padding: 8,
+                    cornerRadius: 6,
                     usePointStyle: true,
                     boxPadding: 4,
-                    bodyFont: { family: 'Manrope', size: 11 }
+                    bodyFont: { family: 'Manrope', size: 10 }
                 }
             },
             scales: type !== 'doughnut' ? {
                 y: { 
-                    grid: { color: gridColor, drawTicks: false }, 
+                    grid: { color: gridColor, drawTicks: false, borderDash: [3, 3] }, 
                     ticks: { color: textColor, font: { family: 'Manrope', size: 10, weight: 500 }, padding: 8 }, 
                     border: { display: false } 
                 },
@@ -1111,7 +1124,7 @@ function renderDelaySection(master, mode, filterValue) {
     
     const distLabels = ['On-Time', '16-30 min', '>30 min'];
     const distData = [onTime, under30, over30];
-    const distColors = ['#10b981', '#f59e0b', '#ef4444']; // Emerald, Amber, Red (Corporate Shades)
+    const distColors = ['#10b981', '#f59e0b', '#f43f5e']; // Emerald, Amber, Rose (SaaS Palette)
     
     initChart('delayDistChart', 'doughnut', {
         labels: distLabels,
@@ -1119,18 +1132,10 @@ function renderDelaySection(master, mode, filterValue) {
     }, { 
         plugins: { 
             legend: { 
-                display: true, 
-                position: 'bottom', 
-                labels: { 
-                    color: '#94a3b8', 
-                    font: { size: 10, family: 'Manrope' }, 
-                    boxWidth: 8,
-                    usePointStyle: true,
-                    padding: 15
-                } 
+                display: false
             } 
         }, 
-        cutout: '75%', 
+        cutout: '85%', 
         maintainAspectRatio: false 
     });
     
@@ -1163,22 +1168,23 @@ function renderDelaySection(master, mode, filterValue) {
     // Avg delay per airline bar chart (all airlines with delays >15min)
     const sortedAirlines = Object.entries(airlineAvg).sort((a, b) => b[1].avg - a[1].avg).slice(0, 15);
     initChart('avgDelayChart', 'bar', {
-        labels: sortedAirlines.map(a => `${a[0]} (${a[1].count})`),
+        labels: sortedAirlines.map(a => `${a[0]}`),
         datasets: [{
             label: 'Avg Delay (min)',
             data: sortedAirlines.map(a => Math.round(a[1].avg)),
-            backgroundColor: sortedAirlines.map(a => a[1].avg > 30 ? '#ef4444cc' : '#f59e0bcc'),
-            borderRadius: 2
+            backgroundColor: '#3b82f6',
+            borderRadius: 2,
+            barThickness: 12
         }]
     }, { 
         indexAxis: 'y', 
         scales: { 
             x: { 
                 beginAtZero: true, 
-                title: { display: true, text: 'Minutes', color: '#94a3b8', font: { size: 10, weight: 600 } },
-                grid: { drawBorder: false, color: 'rgba(148, 163, 184, 0.1)' }
+                title: { display: false },
+                ticks: { font: { size: 10 }, color: '#71717a' }
             },
-            y: { ticks: { autoSkip: false, font: { size: 10 } } }
+            y: { ticks: { autoSkip: false, font: { size: 10 }, color: '#71717a' } }
         } 
     });
 }
@@ -1240,26 +1246,27 @@ function renderOTPSection(master, mode, filterValue) {
         .slice(0, 15);
     
     initChart('otpAirlineChart', 'bar', {
-        labels: sortedOTP.map(x => `${x.code} (${x.total})`),
+        labels: sortedOTP.map(x => `${x.code}`),
         datasets: [{
             label: 'Avg Variance (min)',
             data: sortedOTP.map(x => Math.round(x.rate)),
-            backgroundColor: sortedOTP.map(x => x.rate <= 15 ? '#10b981cc' : x.rate <= 30 ? '#f59e0bcc' : '#ef4444cc'),
-            borderRadius: 2
+            backgroundColor: sortedOTP.map(x => x.rate <= 15 ? '#10b981' : x.rate <= 30 ? '#f59e0b' : '#f43f5e'),
+            borderRadius: 2,
+            barPercentage: 0.5
         }]
     }, {
         indexAxis: 'y',
         scales: { 
             x: { 
                 beginAtZero: true, 
-                title: { display: true, text: 'Minutes', color: '#94a3b8', font: { size: 10, weight: 600 } },
-                grid: { drawBorder: false, color: 'rgba(148, 163, 184, 0.1)' }
+                title: { display: false },
+                ticks: { font: { size: 10 }, color: '#71717a' }
             },
-            y: { ticks: { autoSkip: false, font: { size: 10 } } }
+            y: { ticks: { autoSkip: false, font: { size: 10 }, color: '#71717a' } }
         },
         plugins: { 
             legend: { display: false }, 
-            title: { display: true, text: 'Avg Schedule Variance per Airline', color: '#94a3b8', font: { size: 11, family: 'Manrope', weight: 600 } } 
+            title: { display: true, text: 'Avg Schedule Variance per Airline', color: '#71717a', font: { size: 10, family: 'Manrope', weight: 600 } } 
         }
     });
     
@@ -1272,21 +1279,21 @@ function renderOTPSection(master, mode, filterValue) {
             data: slots.map(s => s[1].total > 0 ? Math.round(s[1].sumDiff / s[1].total) : 0),
             backgroundColor: slots.map(s => {
                 const rate = s[1].total > 0 ? s[1].sumDiff / s[1].total : 0;
-                return rate <= 15 ? '#10b981cc' : rate <= 30 ? '#f59e0bcc' : '#ef4444cc';
+                return rate <= 15 ? '#10b981' : rate <= 30 ? '#f59e0b' : '#f43f5e';
             }),
-            borderRadius: 2
+            borderRadius: 2,
+            barPercentage: 0.5
         }]
     }, {
         scales: { 
             y: { 
                 beginAtZero: true, 
-                title: { display: true, text: 'Minutes', color: '#94a3b8', font: { size: 10, weight: 600 } },
-                grid: { drawBorder: false, color: 'rgba(148, 163, 184, 0.1)' }
+                title: { display: true, text: 'Minutes', color: '#71717a', font: { size: 10 } }
             } 
         },
         plugins: { 
             legend: { display: false }, 
-            title: { display: true, text: 'Avg Variance per Time Slot', color: '#94a3b8', font: { size: 11, family: 'Manrope', weight: 600 } } 
+            title: { display: true, text: 'Avg Variance per Time Slot', color: '#71717a', font: { size: 11, family: 'Manrope', weight: 600 } } 
         }
     });
     
@@ -1312,9 +1319,9 @@ function renderOTPSection(master, mode, filterValue) {
             datasets: [{
                 label: 'Avg Variance (min)',
                 data: days.map(d => dailyOTP[d].total > 0 ? Math.round(dailyOTP[d].sumDiff / dailyOTP[d].total) : 0),
-                borderColor: '#6366f1', backgroundColor: 'rgba(99, 102, 241, 0.1)', fill: true, tension: 0.4
+                borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.05)', fill: true, tension: 0.4, pointRadius: 0
             }]
-        }, { scales: { y: { beginAtZero: true, title: { display: true, text: 'Minutes', color: '#94a3b8', font: { size: 10, weight: 600 } } } } });
+        }, { scales: { y: { beginAtZero: true, title: { display: true, text: 'Minutes', color: '#71717a', font: { size: 10 } } } } });
     }
 }
 
@@ -1397,15 +1404,19 @@ function renderTurnaroundSection(master) {
             datasets: [{
                 label: 'Flights',
                 data: bLabels.map(l => buckets[l]),
-                backgroundColor: '#6366f1cc',
-                borderRadius: 2
+                backgroundColor: '#6366f1',
+                borderRadius: { topLeft: 2, topRight: 2 },
+                barPercentage: 0.6
             }]
         }, { 
             scales: { 
                 y: { 
                     beginAtZero: true,
-                    grid: { drawBorder: false, color: 'rgba(148, 163, 184, 0.1)' }
-                } 
+                    ticks: { font: { size: 10 }, color: '#71717a' }
+                },
+                x: {
+                    ticks: { font: { size: 10 }, color: '#71717a' }
+                }
             } 
         });
     };
@@ -1460,8 +1471,8 @@ function renderTaxiTimeSection(master) {
     
     if (statsEl) {
         statsEl.innerHTML = `
-            <div class="stat-pill"><span class="stat-label">Avg Taxi-In</span><span class="stat-value" style="color:var(--primary);">${avgIn}m</span></div>
-            <div class="stat-pill"><span class="stat-label">Avg Taxi-Out</span><span class="stat-value" style="color:var(--secondary);">${avgOut}m</span></div>
+            <div class="stat-pill"><span class="stat-label">Avg Taxi-In</span><span class="stat-value" style="color:#2563eb;">${avgIn}m</span></div>
+            <div class="stat-pill"><span class="stat-label">Avg Taxi-Out</span><span class="stat-value" style="color:#71717a;">${avgOut}m</span></div>
             <div class="stat-pill"><span class="stat-label">Samples In</span><span class="stat-value">${taxiIn.length}</span></div>
             <div class="stat-pill"><span class="stat-label">Samples Out</span><span class="stat-value">${taxiOut.length}</span></div>
         `;
@@ -1479,17 +1490,19 @@ function renderTaxiTimeSection(master) {
             {
                 label: 'Avg Taxi-In (min)',
                 data: hours.map(h => hourlyTaxi[h].in.length > 0 ? Math.round(hourlyTaxi[h].in.reduce((a, b) => a + b, 0) / hourlyTaxi[h].in.length) : 0),
-                backgroundColor: '#6366f1',
-                borderRadius: 2
+                backgroundColor: '#2563eb',
+                borderRadius: { topLeft: 2, topRight: 2 },
+                barPercentage: 0.5
             },
             {
                 label: 'Avg Taxi-Out (min)',
                 data: hours.map(h => hourlyTaxi[h].out.length > 0 ? Math.round(hourlyTaxi[h].out.reduce((a, b) => a + b, 0) / hourlyTaxi[h].out.length) : 0),
-                backgroundColor: '#94a3b8',
-                borderRadius: 2
+                backgroundColor: '#71717a',
+                borderRadius: { topLeft: 2, topRight: 2 },
+                barPercentage: 0.5
             }
         ]
-    }, { scales: { y: { beginAtZero: true, title: { display: true, text: 'Minutes', color: '#8a8f98', font: { size: 10 } } } } });
+    }, { scales: { y: { beginAtZero: true, ticks: { font: { size: 10 }, color: '#71717a' } }, x: { ticks: { font: { size: 10 }, color: '#71717a' } } } });
 }
 
 function hideLoader() {
